@@ -1,0 +1,180 @@
+import axios from 'axios';
+import { shell } from 'electron';
+import Store from 'electron-store';
+import { DISCORD_CONFIG } from '../config/config';
+import { databaseService, User } from './db';
+
+export interface DiscordUser {
+  id: string;
+  username: string;
+  discriminator: string;
+  avatar?: string;
+  email?: string;
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: User;
+  error?: string;
+}
+
+interface AuthData {
+  accessToken: string;
+  tokenType: string;
+  user: User;
+  loginTime: string;
+}
+
+class AuthService {
+  private authServer: any;
+  private readonly AUTH_KEY = 'loot_ledger_auth';
+  private store: Store;
+
+  constructor() {
+    this.store = new Store();
+    // Initialize any needed setup
+  }
+
+  generateAuthURL(): string {
+    const params = new URLSearchParams({
+      client_id: DISCORD_CONFIG.CLIENT_ID,
+      redirect_uri: DISCORD_CONFIG.REDIRECT_URI,
+      response_type: 'code',
+      scope: DISCORD_CONFIG.SCOPE,
+    });
+
+    return `${DISCORD_CONFIG.OAUTH_URL}?${params.toString()}`;
+  }
+
+  async startAuthFlow(): Promise<AuthResult> {
+    return new Promise((resolve) => {
+      // Generate auth URL and open in browser
+      const authURL = this.generateAuthURL();
+      shell.openExternal(authURL);
+
+      // Create a simple HTTP server to handle the callback
+      this.authServer = require('http').createServer(async (req: any, res: any) => {
+        const parsedUrl = require('url').parse(req.url, true);
+        
+        if (parsedUrl.pathname === '/auth/discord/callback') {
+          const { code, error } = parsedUrl.query;
+
+          if (error) {
+            res.writeHead(400, { 'Content-Type': 'text/html' });
+            res.end('<h1>Authentication Failed</h1><p>You can close this window.</p>');
+            this.authServer.close();
+            resolve({ success: false, error: error as string });
+            return;
+          }
+
+          if (code) {
+            try {
+              const result = await this.exchangeCodeForToken(code as string);
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end('<h1>Authentication Successful!</h1><p>You can close this window and return to the app.</p>');
+              this.authServer.close();
+              resolve(result);
+            } catch (err) {
+              res.writeHead(500, { 'Content-Type': 'text/html' });
+              res.end('<h1>Authentication Error</h1><p>Something went wrong. Please try again.</p>');
+              this.authServer.close();
+              resolve({ success: false, error: 'Token exchange failed' });
+            }
+          }
+        }
+      });
+
+      this.authServer.listen(3000, () => {
+        console.log('Auth server listening on port 3000');
+      });
+
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        if (this.authServer.listening) {
+          this.authServer.close();
+          resolve({ success: false, error: 'Authentication timeout' });
+        }
+      }, 300000);
+    });
+  }
+
+  private async exchangeCodeForToken(code: string): Promise<AuthResult> {
+    try {
+      // Exchange authorization code for access token
+      const tokenResponse = await axios.post(
+        DISCORD_CONFIG.TOKEN_URL,
+        new URLSearchParams({
+          client_id: DISCORD_CONFIG.CLIENT_ID,
+          client_secret: DISCORD_CONFIG.CLIENT_SECRET,
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: DISCORD_CONFIG.REDIRECT_URI,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      const { access_token, token_type } = tokenResponse.data;
+
+      // Get user information from Discord
+      const userResponse = await axios.get(DISCORD_CONFIG.USER_URL, {
+        headers: {
+          Authorization: `${token_type} ${access_token}`,
+        },
+      });
+
+      const discordUser: DiscordUser = userResponse.data;
+
+      // Store user in database
+      const user = await databaseService.users.createOrUpdateUser(discordUser);
+
+      // Store auth data locally
+      const authData: AuthData = {
+        accessToken: access_token,
+        tokenType: token_type,
+        user: user,
+        loginTime: new Date().toISOString(),
+      };
+      (this.store as any).set(this.AUTH_KEY, authData);
+
+      return { success: true, user };
+    } catch (error) {
+      console.error('Error during token exchange:', error);
+      return { success: false, error: 'Failed to authenticate with Discord' };
+    }
+  }
+
+  getCurrentUser(): User | null {
+    const authData = this.getAuthData();
+    return authData?.user || null;
+  }
+
+  isLoggedIn(): boolean {
+    const authData = this.getAuthData();
+    return !!(authData?.accessToken && authData?.user);
+  }
+
+  logout(): void {
+    (this.store as any).delete(this.AUTH_KEY);
+  }
+
+  getAccessToken(): string | null {
+    const authData = this.getAuthData();
+    return authData?.accessToken || null;
+  }
+
+  private getAuthData(): AuthData | null {
+    try {
+      const stored = (this.store as any).get(this.AUTH_KEY);
+      return stored || null;
+    } catch (error) {
+      console.error('Error parsing auth data:', error);
+      return null;
+    }
+  }
+}
+
+export const authService = new AuthService();

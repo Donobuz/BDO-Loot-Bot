@@ -1,18 +1,32 @@
 {
   "name": "bdo-loot-bot",
   "version": "1.0.0",
-  "main": "main.js",
+  "description": "Black Desert Online Loot Tracking Application",
+  "main": "dist/main/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"npm:watch-renderer\" \"wait-on dist/renderer/bundle.js && electron .\"",
+    "dev": "concurrently \"npm:watch-renderer\" \"npm:watch-main\" \"wait-on dist/renderer/bundle.js dist/main/main.js && electron .\"",
+    "start": "npm run dev",
     "watch-renderer": "webpack --watch",
-    "build-renderer": "webpack"
+    "watch-main": "webpack --config webpack.main.config.js --watch",
+    "build-renderer": "webpack",
+    "build-main": "webpack --config webpack.main.config.js",
+    "build": "npm run build-renderer && npm run build-main",
+    "clean": "rimraf dist"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "electron",
+    "bdo",
+    "loot",
+    "tracker",
+    "discord"
+  ],
+  "author": "Donobuz",
+  "license": "MIT",
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.5",
+    "axios": "^1.10.0",
+    "dotenv": "^17.2.0",
+    "electron-store": "^10.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -21,8 +35,11 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "concurrently": "^9.2.0",
+    "css-loader": "^7.1.2",
     "electron": "^37.2.1",
     "html-webpack-plugin": "^5.6.3",
+    "rimraf": "^6.0.1",
+    "style-loader": "^4.0.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
     "wait-on": "^8.0.3",
