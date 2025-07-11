@@ -60,10 +60,37 @@ class AuthService {
           const { code, error } = parsedUrl.query;
 
           if (error) {
+            // Handle different error types with user-friendly messages
+            let userFriendlyError: string;
+            let htmlMessage: string;
+            
+            switch (error) {
+              case 'access_denied':
+                userFriendlyError = 'Login was cancelled. Please try again if you want to sign in.';
+                htmlMessage = '<h1>Login Cancelled</h1><p>You cancelled the Discord login. You can close this window and try again if needed.</p>';
+                break;
+              case 'invalid_request':
+                userFriendlyError = 'Invalid login request. Please try again.';
+                htmlMessage = '<h1>Invalid Request</h1><p>There was an issue with the login request. Please close this window and try again.</p>';
+                break;
+              case 'unauthorized_client':
+                userFriendlyError = 'App is not authorized. Please contact support.';
+                htmlMessage = '<h1>Authorization Error</h1><p>This app is not properly configured. Please contact support.</p>';
+                break;
+              case 'unsupported_response_type':
+              case 'invalid_scope':
+                userFriendlyError = 'Configuration error. Please contact support.';
+                htmlMessage = '<h1>Configuration Error</h1><p>There is a configuration issue with this app. Please contact support.</p>';
+                break;
+              default:
+                userFriendlyError = `Authentication failed: ${error}`;
+                htmlMessage = '<h1>Authentication Failed</h1><p>Something went wrong during login. You can close this window and try again.</p>';
+            }
+
             res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<h1>Authentication Failed</h1><p>You can close this window.</p>');
+            res.end(htmlMessage);
             this.authServer.close();
-            resolve({ success: false, error: error as string });
+            resolve({ success: false, error: userFriendlyError });
             return;
           }
 
