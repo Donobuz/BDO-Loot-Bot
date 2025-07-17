@@ -1,193 +1,210 @@
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* Dashboard.css */
+@import '../../globals.css';
 
 .dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  font-family: var(--font-family);
 }
 
+/* Use global header classes with component-specific overrides */
 .dashboard-header {
-  background: rgba(0, 0, 0, 0.1);
+  /* Inherits from global .header class */
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--card-border);
 }
 
-.user-info {
+.dashboard-header-content {
+  /* Inherits from global .header-content class */
   display: flex;
   align-items: center;
-  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: var(--spacing-xl);
+  width: 100%;
 }
 
-.avatar-container {
-  position: relative;
-  display: inline-block;
-}
-
-.user-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.user-avatar:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: scale(1.05);
-}
-
-.online-indicator {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 16px;
-  height: 16px;
-  background: #43b581;
-  border: 2px solid white;
-  border-radius: 50%;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.username {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.user-id {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-}
-
-.member-since {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
+/* Component-specific button styles */
 .admin-button {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  background: var(--discord-primary);
   border: none;
-  color: #2c1810;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
+  transition: var(--transition-fast);
+  font-size: var(--font-size-sm);
   font-weight: 600;
+  box-shadow: var(--discord-shadow);
 }
 
 .admin-button:hover {
-  background: linear-gradient(135deg, #ffed4e 0%, #fff566 100%);
+  background: var(--discord-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: var(--discord-shadow-hover);
 }
 
 .logout-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
+  transition: var(--transition-fast);
+  font-size: var(--font-size-sm);
 }
 
 .logout-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
 }
 
 .dashboard-content {
-  padding: 2rem;
+  padding: var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.welcome-section {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.welcome-section h1 {
-  font-size: 2.5rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 700;
-}
-
-.welcome-section p {
-  font-size: 1.125rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0;
 }
 
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  gap: var(--spacing-lg);
 }
 
 .dashboard-card {
-  background: rgba(255, 255, 255, 0.1);
+  /* Use global card styles with overrides */
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  transition: var(--transition-normal);
 }
 
 .dashboard-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--button-hover-bg);
+  border-color: var(--button-border);
   transform: translateY(-2px);
 }
 
 .dashboard-card h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xl);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .dashboard-card p {
-  margin: 0 0 1rem 0;
-  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--text-secondary);
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--discord-primary);
   border: none;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 0.75rem var(--spacing-lg);
+  border-radius: var(--border-radius);
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: var(--transition-normal);
   width: 100%;
+  box-shadow: var(--discord-shadow);
 }
 
 .primary-button:hover {
+  background: var(--discord-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--discord-shadow-hover);
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.action-button {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: left;
+}
+
+.action-button:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+}
+
+/* Use global loading and error states */
+.dashboard-loading,
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+.retry-button {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
+  padding: 0.75rem var(--spacing-lg);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  margin: var(--spacing-sm);
+}
+
+.retry-button:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+}
+
+.dashboard-error h2 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--error-color);
+}
+
+.dashboard-error p {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-secondary);
+}
+
+/* Component-specific responsive overrides */
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-content {
+    padding: var(--spacing-md);
+  }
+}
+
+.primary-button {
+  transition: var(--transition-normal);
+  width: 100%;
+  box-shadow: var(--discord-shadow);
+}
+
+.primary-button:hover {
+  background: var(--discord-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--discord-shadow-hover);
 }
 
 .quick-actions {
@@ -197,19 +214,19 @@
 }
 
 .action-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
   text-align: left;
 }
 
 .action-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
 }
 
 .dashboard-loading,
@@ -221,45 +238,79 @@
   min-height: 100vh;
   text-align: center;
   padding: 2rem;
+  background: var(--primary-bg);
+  color: var(--text-primary);
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid white;
+  border: 3px solid var(--card-border);
+  border-top: 3px solid var(--text-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .retry-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--transition-fast);
   margin: 0.5rem;
 }
 
 .retry-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
 }
 
 .dashboard-error h2 {
   margin: 0 0 1rem 0;
-  color: #ff6b6b;
+  color: var(--error-color);
 }
 
 .dashboard-error p {
   margin: 0 0 1.5rem 0;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-header-content {
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+  }
+  
+  .user-info {
+    margin-right: 0;
+    justify-content: center;
+  }
+  
+  .header-actions {
+    margin-left: 0;
+    justify-content: center;
+  }
+  
+  .username {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 1rem;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+  
+  .welcome-section h1 {
+    font-size: 2rem;
+  }
 }

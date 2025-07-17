@@ -3,6 +3,7 @@ import { shell } from 'electron';
 import Store from 'electron-store';
 import { DISCORD_CONFIG } from '../config/config';
 import { databaseService, User } from './db';
+import { HtmlTemplateService } from './htmlTemplateService';
 
 interface DiscordUser {
   id: string;
@@ -29,9 +30,11 @@ class AuthService {
   private authServer: any;
   private readonly AUTH_KEY = 'loot_ledger_auth';
   private store: Store;
+  private htmlTemplateService: HtmlTemplateService;
 
   constructor() {
     this.store = new Store();
+    this.htmlTemplateService = new HtmlTemplateService();
     // Initialize any needed setup
   }
 
@@ -67,24 +70,24 @@ class AuthService {
             switch (error) {
               case 'access_denied':
                 userFriendlyError = 'Login was cancelled. Please try again if you want to sign in.';
-                htmlMessage = '<h1>Login Cancelled</h1><p>You cancelled the Discord login. You can close this window and try again if needed.</p>';
+                htmlMessage = this.htmlTemplateService.getAuthCancelledHtml();
                 break;
               case 'invalid_request':
                 userFriendlyError = 'Invalid login request. Please try again.';
-                htmlMessage = '<h1>Invalid Request</h1><p>There was an issue with the login request. Please close this window and try again.</p>';
+                htmlMessage = this.htmlTemplateService.getAuthCancelledHtml();
                 break;
               case 'unauthorized_client':
                 userFriendlyError = 'App is not authorized. Please contact support.';
-                htmlMessage = '<h1>Authorization Error</h1><p>This app is not properly configured. Please contact support.</p>';
+                htmlMessage = this.htmlTemplateService.getAuthCancelledHtml();
                 break;
               case 'unsupported_response_type':
               case 'invalid_scope':
                 userFriendlyError = 'Configuration error. Please contact support.';
-                htmlMessage = '<h1>Configuration Error</h1><p>There is a configuration issue with this app. Please contact support.</p>';
+                htmlMessage = this.htmlTemplateService.getAuthCancelledHtml();
                 break;
               default:
                 userFriendlyError = `Authentication failed: ${error}`;
-                htmlMessage = '<h1>Authentication Failed</h1><p>Something went wrong during login. You can close this window and try again.</p>';
+                htmlMessage = this.htmlTemplateService.getAuthCancelledHtml();
             }
 
             res.writeHead(400, { 'Content-Type': 'text/html' });
@@ -98,12 +101,12 @@ class AuthService {
             try {
               const result = await this.exchangeCodeForToken(code as string);
               res.writeHead(200, { 'Content-Type': 'text/html' });
-              res.end('<h1>Authentication Successful!</h1><p>You can close this window and return to the app.</p>');
+              res.end(this.htmlTemplateService.getAuthSuccessHtml());
               this.authServer.close();
               resolve(result);
             } catch (err) {
               res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end('<h1>Authentication Error</h1><p>Something went wrong. Please try again.</p>');
+              res.end(this.htmlTemplateService.getAuthErrorHtml('Token exchange failed'));
               this.authServer.close();
               resolve({ success: false, error: 'Token exchange failed' });
             }

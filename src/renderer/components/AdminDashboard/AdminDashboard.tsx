@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '../../types';
+import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
+import '../../globals.css';
 import './AdminDashboard.css';
 
 interface AdminDashboardProps {
@@ -66,17 +68,40 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     <div className="admin-dashboard">
       <header className="admin-header">
         <div className="admin-header-content">
-          <button onClick={onBack} className="back-button">
-            ← Back to Dashboard
-          </button>
-          <h1>Admin Dashboard</h1>
-          <div className="admin-user-info">
-            <span>Welcome, {user.username}</span>
+          <div className="user-info">
+            <div className="avatar-container">
+              <img 
+                src={getDiscordAvatarUrl(user.discord_id, user.avatar)} 
+                alt={`${user.username}'s avatar`}
+                className="user-avatar"
+                onError={(e) => {
+                  // Fallback to custom default avatar if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = getDefaultAvatarSvg();
+                }}
+              />
+              <div className="online-indicator"></div>
+            </div>
+            <div className="user-details">
+              <h2 className="username">{user.username}</h2>
+              <p className="user-role">Administrator</p>
+              <p className="user-id">Discord ID: {user.discord_id}</p>
+            </div>
+          </div>
+          <div className="header-actions">
+            <button onClick={onBack} className="back-button">
+              ← Back to Dashboard
+            </button>
           </div>
         </div>
       </header>
 
       <main className="admin-content">
+        <div className="welcome-section">
+          <h1>Admin Dashboard</h1>
+          <p>Manage users, system settings, and monitor application health.</p>
+        </div>
+        
         <div className="admin-grid">
           <div className="admin-card">
             <h3>User Management</h3>

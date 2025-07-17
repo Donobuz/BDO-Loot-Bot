@@ -1,0 +1,492 @@
+/* Global CSS Variables and Styles */
+:root {
+  /* Color Palette - Based on Login Screen */
+  --primary-bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  --card-bg: rgba(30, 30, 46, 0.95);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b2;
+  --text-muted: #8b8b9a;
+  
+  /* Discord Colors */
+  --discord-primary: linear-gradient(45deg, #5865f2, #4752c4);
+  --discord-hover: linear-gradient(45deg, #4752c4, #3c4693);
+  --discord-shadow: rgba(88, 101, 242, 0.3);
+  --discord-shadow-hover: rgba(88, 101, 242, 0.4);
+  
+  /* Interactive Elements */
+  --button-bg: rgba(255, 255, 255, 0.1);
+  --button-border: rgba(255, 255, 255, 0.2);
+  --button-hover-bg: rgba(255, 255, 255, 0.2);
+  --button-hover-border: rgba(255, 255, 255, 0.3);
+  
+  /* Status Colors */
+  --success-bg: rgba(46, 204, 113, 0.1);
+  --success-border: rgba(46, 204, 113, 0.3);
+  --success-color: #2ecc71;
+  --error-bg: rgba(231, 76, 60, 0.1);
+  --error-border: rgba(231, 76, 60, 0.3);
+  --error-color: #e74c3c;
+  --warning-bg: rgba(241, 196, 15, 0.1);
+  --warning-border: rgba(241, 196, 15, 0.3);
+  --warning-color: #f1c40f;
+  
+  /* Typography */
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.8rem;
+  --font-size-4xl: 2.2rem;
+  --font-size-5xl: 2.5rem;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 2.5rem;
+  --spacing-3xl: 3rem;
+  
+  --border-radius: 12px;
+  --border-radius-lg: 20px;
+  --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 8px 25px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.3);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.6s ease-out;
+}
+
+/* Global Resets */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ============================================
+   COMMON LAYOUT COMPONENTS
+   ============================================ */
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+/* Card Components */
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-normal);
+}
+
+.card:hover {
+  border-color: var(--button-border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-lg {
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-2xl);
+}
+
+/* ============================================
+   BUTTON COMPONENTS
+   ============================================ */
+
+/* Base Button */
+.button {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-size: var(--font-size-base);
+}
+
+.button:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+  transform: translateY(-1px);
+}
+
+/* Button Variants */
+.button-primary {
+  background: var(--discord-primary);
+  border: none;
+  box-shadow: var(--discord-shadow);
+}
+
+.button-primary:hover {
+  background: var(--discord-hover);
+  box-shadow: var(--discord-shadow-hover);
+}
+
+.button-sm {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.button-lg {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================
+   HEADER COMPONENTS
+   ============================================ */
+
+/* Common Header Layout */
+.header {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: var(--spacing-xl);
+  width: 100%;
+}
+
+/* User Info Component */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--card-border);
+  transition: var(--transition-normal);
+  object-fit: cover;
+}
+
+.user-avatar:hover {
+  border-color: var(--button-border);
+  transform: scale(1.05);
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  background: var(--success-color);
+  border: 2px solid var(--text-primary);
+  border-radius: 50%;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.username {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-id {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.user-role {
+  margin: 0;
+  color: var(--discord-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.member-since {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ============================================
+   LOADING & ERROR STATES
+   ============================================ */
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner-lg {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading State Layout */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+.loading-state .loading-spinner,
+.error-state .loading-spinner {
+  margin-bottom: var(--spacing-md);
+}
+
+.error-state h2 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--error-color);
+}
+
+.error-state p {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-secondary);
+}
+
+/* Error Message Component */
+.error-message {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  color: var(--error-color);
+  font-size: var(--font-size-sm);
+}
+
+.error-message p {
+  margin: 0;
+}
+
+/* ============================================
+   WELCOME SECTIONS
+   ============================================ */
+
+.welcome-section {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.welcome-section h1 {
+  font-size: var(--font-size-5xl);
+  margin: 0 0 var(--spacing-sm) 0;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.welcome-section p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   GRID LAYOUTS
+   ============================================ */
+
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid-auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-auto-fit-lg {
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+}
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-slow);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .card {
+    padding: var(--spacing-md);
+  }
+  
+  .button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: center;
+  }
+  
+  .user-info {
+    margin-right: 0;
+    justify-content: center;
+  }
+  
+  .header-actions {
+    margin-left: 0;
+    justify-content: center;
+  }
+  
+  .username {
+    font-size: var(--font-size-xl);
+  }
+  
+  .welcome-section h1 {
+    font-size: var(--font-size-4xl);
+  }
+  
+  .grid-auto-fit {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-auto-fit-lg {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: var(--spacing-md);
+  }
+  
+  .welcome-section h1 {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .card {
+    padding: var(--spacing-md);
+  }
+  
+  .button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+  }
+}

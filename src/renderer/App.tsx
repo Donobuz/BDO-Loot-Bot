@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import Dashboard from './components/Dashboard';
 import './types'; // Import global types
+import './globals.css';
 import './App.css';
 
 export default function App() {

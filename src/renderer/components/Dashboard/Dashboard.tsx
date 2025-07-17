@@ -109,37 +109,39 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <div className="user-info">
-          <div className="avatar-container">
-            <img 
-              src={getDiscordAvatarUrl(user.discord_id, user.avatar)} 
-              alt={`${user.username}'s avatar`}
-              className="user-avatar"
-              onError={(e) => {
-                // Fallback to custom default avatar if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = getDefaultAvatarSvg();
-              }}
-            />
-            <div className="online-indicator"></div>
+        <div className="dashboard-header-content">
+          <div className="user-info">
+            <div className="avatar-container">
+              <img 
+                src={getDiscordAvatarUrl(user.discord_id, user.avatar)} 
+                alt={`${user.username}'s avatar`}
+                className="user-avatar"
+                onError={(e) => {
+                  // Fallback to custom default avatar if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = getDefaultAvatarSvg();
+                }}
+              />
+              <div className="online-indicator"></div>
+            </div>
+            <div className="user-details">
+              <h2 className="username">{user.username}</h2>
+              <p className="user-id">Discord ID: {user.discord_id}</p>
+              <p className="member-since">
+                Member since: {new Date(user.created).toLocaleDateString()}
+              </p>
+            </div>
           </div>
-          <div className="user-details">
-            <h2 className="username">{user.username}</h2>
-            <p className="user-id">Discord ID: {user.discord_id}</p>
-            <p className="member-since">
-              Member since: {new Date(user.created).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-        <div className="header-actions">
-          {isAdmin && (
-            <button onClick={handleShowAdmin} className="admin-button">
-              Admin Panel
-            </button>
-          )}
-          <button onClick={handleLogout} className="logout-button">
+          <div className="header-actions">
+            {isAdmin && (
+              <button onClick={handleShowAdmin} className="admin-button">
+                Admin Panel
+              </button>
+            )}
+            <button onClick={handleLogout} className="logout-button">
             Logout
           </button>
+          </div>
         </div>
       </header>
 
