@@ -1,7 +1,8 @@
 import { BaseDatabase } from './base';
 import { User, DiscordUser } from './types';
+import { aclsService } from './acls';
 
-export class UsersService extends BaseDatabase {
+class UsersService extends BaseDatabase {
   async createOrUpdateUser(discordUser: DiscordUser): Promise<User> {
     try {
       // Try to find existing user first
@@ -22,7 +23,7 @@ export class UsersService extends BaseDatabase {
           .update({
             username: discordUser.username,
             avatar: discordUser.avatar,
-            updated_at: new Date().toISOString(),
+            updated: new Date().toISOString(),
           })
           .eq('discord_id', discordUser.id)
           .select()
@@ -43,6 +44,15 @@ export class UsersService extends BaseDatabase {
           .single();
 
         if (error) throw error;
+
+        // Create default ACL for new user
+        try {
+          await aclsService.createDefaultAcl(discordUser.id);
+        } catch (aclError) {
+          console.error('Failed to create default ACL for user:', aclError);
+          // Don't throw here - user creation succeeded, ACL creation failed
+        }
+
         return data as User;
       }
     } catch (error) {
@@ -83,13 +93,13 @@ export class UsersService extends BaseDatabase {
     }
   }
 
-  async updateUser(id: number, updates: Partial<Omit<User, 'id' | 'discord_id' | 'created_at' | 'updated_at'>>): Promise<User> {
+  async updateUser(id: number, updates: Partial<Omit<User, 'id' | 'discord_id' | 'created' | 'updated'>>): Promise<User> {
     try {
       const { data, error } = await this.supabase
         .from('users')
         .update({
           ...updates,
-          updated_at: new Date().toISOString(),
+          updated: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
@@ -118,4 +128,7 @@ export class UsersService extends BaseDatabase {
   }
 }
 
-export const usersService = new UsersService();
+const usersService = new UsersService();
+
+// Export both class and instance
+export { UsersService, usersService };

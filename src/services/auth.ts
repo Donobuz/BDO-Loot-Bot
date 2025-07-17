@@ -4,7 +4,7 @@ import Store from 'electron-store';
 import { DISCORD_CONFIG } from '../config/config';
 import { databaseService, User } from './db';
 
-export interface DiscordUser {
+interface DiscordUser {
   id: string;
   username: string;
   discriminator: string;
@@ -12,7 +12,7 @@ export interface DiscordUser {
   email?: string;
 }
 
-export interface AuthResult {
+interface AuthResult {
   success: boolean;
   user?: User;
   error?: string;
@@ -179,6 +179,30 @@ class AuthService {
     return authData?.user || null;
   }
 
+  async getCurrentUserWithPermissions(): Promise<User | null> {
+    const authData = this.getAuthData();
+    if (!authData?.user) {
+      return null;
+    }
+
+    try {
+      // Get user permissions from ACL
+      const acl = await databaseService.acls.getAclByDiscordId(authData.user.discord_id);
+      
+      return {
+        ...authData.user,
+        permissions: acl?.permissions || ['user']
+      };
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
+      // Return user without permissions on error
+      return {
+        ...authData.user,
+        permissions: ['user']
+      };
+    }
+  }
+
   isLoggedIn(): boolean {
     const authData = this.getAuthData();
     return !!(authData?.accessToken && authData?.user);
@@ -204,4 +228,7 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+const authService = new AuthService();
+
+// Export both interface types and service
+export { DiscordUser, AuthResult, AuthData, AuthService, authService };

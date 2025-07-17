@@ -1,11 +1,7 @@
 // Database services exports
 export { BaseDatabase } from './base';
 export { usersService, UsersService } from './users';
-export { locationsService, LocationsService } from './locations';
-export { itemsService, ItemsService } from './items';
-export { grindSessionsService, GrindSessionsService } from './grind-sessions';
-export { sessionLootService, SessionLootService } from './session-loot';
-export { lootTablesService, LootTablesService } from './loot-tables';
+export { aclsService, AclsService } from './acls';
 
 // Type exports
 export * from './types';
@@ -13,28 +9,16 @@ export * from './types';
 // Main database service aggregator class
 import { BaseDatabase } from './base';
 import { UsersService } from './users';
-import { LocationsService } from './locations';
-import { ItemsService } from './items';
-import { GrindSessionsService } from './grind-sessions';
-import { SessionLootService } from './session-loot';
-import { LootTablesService } from './loot-tables';
+import { AclsService } from './acls';
 
 export class DatabaseService extends BaseDatabase {
   public users: UsersService;
-  public locations: LocationsService;
-  public items: ItemsService;
-  public grindSessions: GrindSessionsService;
-  public sessionLoot: SessionLootService;
-  public lootTables: LootTablesService;
+  public acls: AclsService;
 
   constructor() {
     super();
     this.users = new UsersService();
-    this.locations = new LocationsService();
-    this.items = new ItemsService();
-    this.grindSessions = new GrindSessionsService();
-    this.sessionLoot = new SessionLootService();
-    this.lootTables = new LootTablesService();
+    this.acls = new AclsService();
   }
 
   // Health check method that tests all service connections
@@ -55,7 +39,8 @@ export class DatabaseService extends BaseDatabase {
           items: true,
           grindSessions: true,
           sessionLoot: true,
-          lootTables: true
+          lootTables: true,
+          acls: true
         }
       };
     } catch (error) {
@@ -68,7 +53,8 @@ export class DatabaseService extends BaseDatabase {
           items: false,
           grindSessions: false,
           sessionLoot: false,
-          lootTables: false
+          lootTables: false,
+          acls: false
         },
         error: error instanceof Error ? error.message : 'Unknown error'
       };

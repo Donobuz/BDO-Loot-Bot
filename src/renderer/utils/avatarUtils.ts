@@ -1,6 +1,6 @@
 // Avatar utility functions
 
-export const getDefaultAvatarSvg = (): string => {
+const getDefaultAvatarSvg = (): string => {
   const svgContent = `
     <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -19,10 +19,80 @@ export const getDefaultAvatarSvg = (): string => {
   return `data:image/svg+xml;base64,${btoa(svgContent.trim())}`;
 };
 
-export const getDiscordAvatarUrl = (discordId: string, avatar?: string): string => {
-  if (avatar) {
-    return `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png?size=128`;
-  } else {
+/**
+ * Determines the best format for a Discord avatar with browser compatibility
+ * @param avatarHash Discord avatar hash
+ * @param preferCompatibility Whether to prefer older browser compatibility over file size
+ * @returns Object with format and whether it's animated
+ */
+const getAvatarFormat = (avatarHash: string, preferCompatibility: boolean = false) => {
+  const isAnimated = avatarHash.startsWith('a_');
+  
+  if (isAnimated) {
+    // Animated avatars must be GIF
+    return {
+      format: 'gif',
+      isAnimated: true,
+      fallbackFormat: 'gif' // No fallback needed for GIF
+    };
+  }
+  
+  // For static avatars, choose based on compatibility preference
+  return {
+    format: preferCompatibility ? 'png' : 'webp',
+    isAnimated: false,
+    fallbackFormat: 'png' // PNG is universally supported
+  };
+};
+
+/**
+ * Generates a Discord avatar URL with browser compatibility
+ * @param discordId Discord user ID
+ * @param avatar Avatar hash (optional)
+ * @param size Avatar size (default: 128)
+ * @param preferCompatibility Use PNG instead of WebP for older browser support
+ * @returns Avatar URL or default SVG
+ */
+const getDiscordAvatarUrl = (discordId: string, avatar?: string, size: number = 128, preferCompatibility: boolean = false): string => {
+  if (!avatar) {
     return getDefaultAvatarSvg();
   }
+
+  const { format } = getAvatarFormat(avatar, preferCompatibility);
+  
+  return `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.${format}?size=${size}`;
+};
+
+/**
+ * Enhanced avatar URL with automatic fallback handling
+ * Returns both primary and fallback URLs for maximum compatibility
+ */
+const getDiscordAvatarUrlWithFallback = (discordId: string, avatar?: string, size: number = 128): { primary: string; fallback: string } => {
+  if (!avatar) {
+    const defaultAvatar = getDefaultAvatarSvg();
+    return { primary: defaultAvatar, fallback: defaultAvatar };
+  }
+
+  const { format, fallbackFormat } = getAvatarFormat(avatar, false);
+  
+  return {
+    primary: `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.${format}?size=${size}`,
+    fallback: `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.${fallbackFormat}?size=${size}`
+  };
+};
+
+/**
+ * Browser-safe avatar URL that always uses PNG for maximum compatibility
+ * Use this for older browsers or when WebP support is uncertain
+ */
+const getCompatibleDiscordAvatarUrl = (discordId: string, avatar?: string, size: number = 128): string => {
+  return getDiscordAvatarUrl(discordId, avatar, size, true);
+};
+
+// Export all functions
+export {
+  getDefaultAvatarSvg,
+  getDiscordAvatarUrl,
+  getDiscordAvatarUrlWithFallback,
+  getCompatibleDiscordAvatarUrl
 };

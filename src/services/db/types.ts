@@ -5,8 +5,17 @@ export interface User {
   discord_id: string;
   username: string;
   avatar?: string;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
+  permissions?: string[]; // Include user permissions
+}
+
+export interface UserAcl {
+  id: number;
+  discord_id: string;
+  permissions: string[]; // Array of permission strings like ["user"], ["admin", "editor"]
+  created: string;
+  updated: string;
 }
 
 export interface Location {
@@ -16,53 +25,9 @@ export interface Location {
   description?: string;
   recommended_ap?: number;
   recommended_dp?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Item {
-  id: number;
-  name: string;
-  category: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  market_value?: number;
-  icon_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface LocationLootTable {
-  id: number;
-  location_id: number;
-  item_id: number;
-  drop_rate?: number; // percentage as decimal (0.01 = 1%)
-  min_quantity: number;
-  max_quantity: number;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GrindSession {
-  id: number;
-  user_id: number;
-  location_id: number;
-  start_time: string;
-  end_time?: string;
-  duration_minutes?: number;
-  total_value?: number;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SessionLoot {
-  id: number;
-  session_id: number;
-  item_id: number;
-  quantity: number;
-  estimated_value?: number;
-  timestamp: string;
+  monster_type?: string;
+  created: string;
+  updated: string;
 }
 
 // === DISCORD TYPES ===

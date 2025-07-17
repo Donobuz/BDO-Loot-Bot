@@ -12,12 +12,13 @@ declare global {
 
 // Database types
 export interface User {
+  permissions: any;
   id: number;
   discord_id: string;
   username: string;
   avatar?: string;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
 }
 
 export interface Location {
@@ -27,8 +28,8 @@ export interface Location {
   description?: string;
   recommended_ap?: number;
   recommended_dp?: number;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
 }
 
 export interface Item {
@@ -38,8 +39,8 @@ export interface Item {
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   market_value?: number;
   icon_url?: string;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
 }
 
 export interface GrindSession {
@@ -51,8 +52,8 @@ export interface GrindSession {
   duration_minutes?: number;
   total_value?: number;
   notes?: string;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
 }
 
 export interface SessionLoot {

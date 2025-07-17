@@ -60,7 +60,7 @@ ipcMain.handle('logout', async () => {
 });
 
 ipcMain.handle('get-current-user', async () => {
-  return authService.getCurrentUser();
+  return authService.getCurrentUserWithPermissions();
 });
 
 app.whenReady().then(() => {

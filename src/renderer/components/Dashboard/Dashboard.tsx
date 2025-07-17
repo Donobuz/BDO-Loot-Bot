@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { User } from '../../types';
 import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
+import AdminDashboard from '../AdminDashboard';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -11,17 +12,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Get user data from main process
+      // Get user data with permissions from main process
       const userData = await window.electronAPI.getCurrentUser();
       
       if (userData) {
@@ -35,7 +33,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
 
   const handleLogout = async () => {
     try {
@@ -45,6 +47,19 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       console.error('Error logging out:', err);
     }
   };
+
+  const handleShowAdmin = () => {
+    setShowAdminDashboard(true);
+  };
+
+  const handleBackFromAdmin = () => {
+    setShowAdminDashboard(false);
+  };
+
+  // Show admin dashboard if requested
+  if (showAdminDashboard && user) {
+    return <AdminDashboard user={user} onBack={handleBackFromAdmin} />;
+  }
 
   if (loading) {
     return (
@@ -88,6 +103,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     );
   }
 
+  // Check if user has admin permissions
+  const isAdmin = user?.permissions?.includes('admin') || false;
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -109,11 +127,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <h2 className="username">{user.username}</h2>
             <p className="user-id">Discord ID: {user.discord_id}</p>
             <p className="member-since">
-              Member since: {new Date(user.created_at).toLocaleDateString()}
+              Member since: {new Date(user.created).toLocaleDateString()}
             </p>
           </div>
         </div>
         <div className="header-actions">
+          {isAdmin && (
+            <button onClick={handleShowAdmin} className="admin-button">
+              Admin Panel
+            </button>
+          )}
           <button onClick={handleLogout} className="logout-button">
             Logout
           </button>
