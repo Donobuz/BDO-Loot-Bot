@@ -144,6 +144,37 @@
   border-color: var(--button-hover-border);
 }
 
+/* Settings Button */
+.settings-button {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-primary);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-button:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+  transform: rotate(45deg);
+}
+
+.settings-button:focus {
+  outline: none;
+  border-color: var(--discord-primary);
+  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+}
+
+/* Header Region Selector - removed, replaced with settings modal */
+
 /* Use global loading and error states */
 .dashboard-loading,
 .dashboard-error {

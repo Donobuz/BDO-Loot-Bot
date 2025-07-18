@@ -30,3 +30,71 @@
   margin: 0;
   color: var(--text-secondary);
 }
+
+/* Responsive tabs for item management - Dark Theme */
+.responsive-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #374151;
+  gap: 0;
+  background: #1f2937;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.responsive-tab-button {
+  flex: 1 1 50%; /* 50% width on small screens (2 per row) */
+  min-width: 0;
+  padding: 14px 12px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: #1f2937;
+  color: #9ca3af;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-size: 13px;
+  position: relative;
+}
+
+.responsive-tab-button:hover {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.responsive-tab-button.active {
+  border-bottom-color: #3b82f6;
+  background: #374151;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: inset 0 -3px 0 0 #3b82f6;
+}
+
+.responsive-tab-button:first-child {
+  border-right: 1px solid #374151;
+}
+
+.responsive-tab-button:nth-child(3) {
+  flex: 1 1 100%; /* Full width for third button (wraps to new line) */
+  border-top: 1px solid #374151;
+}
+
+/* Larger screens - all tabs in one row */
+@media (min-width: 600px) {
+  .responsive-tab-button {
+    flex: 1 1 33.333% !important; /* Equal width on larger screens */
+  }
+  
+  .responsive-tab-button:nth-child(3) {
+    border-top: none !important;
+  }
+  
+  .responsive-tab-button:nth-child(2) {
+    border-right: 1px solid #374151;
+  }
+  
+  .responsive-tab-button:nth-child(3) {
+    border-right: none;
+  }
+}

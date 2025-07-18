@@ -113,6 +113,26 @@ class UsersService extends BaseDatabase {
     }
   }
 
+  async updateUserRegion(discordId: string, region: string): Promise<User> {
+    try {
+      const { data, error } = await this.supabase
+        .from('users')
+        .update({
+          preferred_region: region,
+          updated: new Date().toISOString(),
+        })
+        .eq('discord_id', discordId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as User;
+    } catch (error) {
+      console.error('Error updating user region:', error);
+      throw error;
+    }
+  }
+
   async deleteUser(id: number): Promise<void> {
     try {
       const { error } = await this.supabase

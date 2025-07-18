@@ -5,6 +5,8 @@ import { authService } from '../services/auth';
 import { databaseService } from '../services/db';
 import { setupLocationHandlers } from './locationAPI';
 import { itemHandlers } from './itemAPI';
+import { lootTableHandlers } from './lootTableAPI';
+import { userHandlers, userPreferencesHandlers } from './userAPI';
 import { StorageService } from '../services/db/storage';
 
 // Global storage service instance
@@ -84,6 +86,21 @@ setupLocationHandlers();
 
 // Setup item handlers
 Object.entries(itemHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup loot table handlers
+Object.entries(lootTableHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup user handlers
+Object.entries(userHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup user preferences handlers
+Object.entries(userPreferencesHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

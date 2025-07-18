@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './ItemManagement.css';
-import { Item } from '../../../types';
+import { Item, ItemType } from '../../../types';
 import ImageUpload from '../../ImageUpload';
 import { ProcessedImage } from '../../../utils/imageUtils';
 import { useModal } from '../../../contexts/ModalContext';
@@ -38,10 +38,16 @@ const ItemManagement: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState('ALL');
   const [selectedRegions, setSelectedRegions] = useState<string[]>(REGIONS);
   const [formData, setFormData] = useState({
-    bdo_item_id: ''
+    bdo_item_id: '',
+    name: '',
+    convertible_to_bdo_item_id: '',
+    conversion_ratio: '1',
+    base_price: ''
   });
+  const [activeTab, setActiveTab] = useState<'marketplace' | 'trash_loot' | 'conversion'>('marketplace');
   const [pendingImage, setPendingImage] = useState<ProcessedImage | null>(null);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null | undefined>(undefined);
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [bulkEditingBdoItemId, setBulkEditingBdoItemId] = useState<number | null>(null);
   const [bulkEditItems, setBulkEditItems] = useState<Item[]>([]);
@@ -67,6 +73,14 @@ const ItemManagement: React.FC = () => {
     }
   };
 
+  // Helper function to normalize price values (treat null/undefined as 0 for price fields)
+  const normalizePriceValue = (value: any, fieldName: string): any => {
+    if ((fieldName === 'base_price' || fieldName === 'last_sold_price') && value == null) {
+      return 0;
+    }
+    return value;
+  };
+
   // Filter and sort items based on search query, archive status, region, and sorting
   const filteredItems = useMemo(() => {
     let filtered = items.filter(item => 
@@ -89,8 +103,8 @@ const ItemManagement: React.FC = () => {
 
     // Sort the filtered results
     filtered.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
+      let aValue: any = normalizePriceValue(a[sortField], sortField);
+      let bValue: any = normalizePriceValue(b[sortField], sortField);
 
       // Handle null/undefined values
       if (aValue == null && bValue == null) return 0;
@@ -99,16 +113,18 @@ const ItemManagement: React.FC = () => {
 
       // Handle string sorting
       if (typeof aValue === 'string' && typeof bValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
+        const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        return sortDirection === 'asc' ? comparison : -comparison;
       }
 
-      if (aValue < bValue) {
-        return sortDirection === 'asc' ? -1 : 1;
+      // Handle number sorting
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       }
-      if (aValue > bValue) {
-        return sortDirection === 'asc' ? 1 : -1;
-      }
+
+      // Generic comparison for other types
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
 
@@ -128,6 +144,43 @@ const ItemManagement: React.FC = () => {
       return groups;
     }, {} as Record<number, Item[]>);
   }, [filteredItems, selectedRegion]);
+
+  // Sort grouped items based on current sort criteria (only when viewing all regions)
+  const sortedGroupedItems = useMemo(() => {
+    if (selectedRegion !== 'ALL') return [];
+    
+    return Object.entries(groupedItems)
+      .map(([bdoItemId, itemGroup]) => ({
+        bdoItemId: parseInt(bdoItemId),
+        itemGroup,
+        representativeItem: itemGroup[0] // Use first item as representative for sorting
+      }))
+      .sort((a, b) => {
+        const aValue: any = normalizePriceValue(a.representativeItem[sortField], sortField);
+        const bValue: any = normalizePriceValue(b.representativeItem[sortField], sortField);
+
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
+        if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
+
+        // Handle string sorting
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+          return sortDirection === 'asc' ? comparison : -comparison;
+        }
+
+        // Handle number sorting
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        // Generic comparison for other types
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [groupedItems, sortField, sortDirection, selectedRegion]);
 
   // State for tracking which item groups are expanded
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
@@ -158,30 +211,255 @@ const ItemManagement: React.FC = () => {
       return;
     }
 
+    // Validate fields based on active tab
+    if (activeTab === 'trash_loot' || activeTab === 'conversion') {
+      // Validate name for non-marketplace items
+      if (!formData.name.trim()) {
+        alert('Please enter an item name');
+        return;
+      }
+    }
+    
+    if (activeTab === 'trash_loot') {
+      // Validate trash loot fields
+      const basePrice = parseInt(formData.base_price) || 0;
+      if (basePrice <= 0) {
+        alert('Please enter a valid vendor price for trash loot');
+        return;
+      }
+    } else if (activeTab === 'conversion') {
+      // Validate conversion fields
+      if (!formData.convertible_to_bdo_item_id) {
+        alert('Please enter the BDO item ID this converts to');
+        return;
+      }
+      const conversionRatio = parseInt(formData.conversion_ratio) || 0;
+      if (conversionRatio <= 0) {
+        alert('Please enter a valid conversion ratio (must be greater than 0)');
+        return;
+      }
+    }
+
     try {
       setSyncing(true);
       
       if (editingItem) {
-        // For editing, update the bdo_item_id
-        const result = await window.electronAPI.items.update(editingItem.id, {
-          bdo_item_id: bdoItemId
-        });
+        // For editing, update all relevant fields except immutable ones
+        const updateData: any = {};
+        // Note: bdo_item_id and convertible_to_bdo_item_id are not included as they're immutable
+
+        // Add fields based on item type
+        if (editingItem.type === 'trash_loot') {
+          updateData.name = formData.name;
+          updateData.base_price = parseInt(formData.base_price) || 0;
+        } else if (editingItem.type === 'conversion') {
+          updateData.name = formData.name;
+          // convertible_to_bdo_item_id is immutable, don't update it
+          updateData.conversion_ratio = parseInt(formData.conversion_ratio) || 1;
+        } else {
+          // For marketplace items, just update the name if provided
+          if (formData.name) {
+            updateData.name = formData.name;
+          }
+        }
+
+        // Handle image removal first if the image was removed (before updating other fields)
+        if (originalImageUrl && !editingItem.image_url) {
+          try {
+            console.log('🗑️ Removing image from storage bucket and database for item:', editingItem.id);
+            const removeResult = await window.electronAPI.items.removeImage(editingItem.id);
+            if (removeResult.success) {
+              console.log('✅ Image removed successfully from storage bucket and database');
+            } else {
+              console.warn('Failed to remove image:', removeResult.error);
+              // Continue with the update even if image removal fails
+            }
+          } catch (imageError) {
+            console.warn('Failed to remove image:', imageError);
+            // Continue with the update even if image removal fails
+          }
+        }
+
+        const result = await window.electronAPI.items.update(editingItem.id, updateData);
         
         if (result.success) {
+          // Handle image upload if there's a pending image
+          if (pendingImage) {
+            console.log(`📸 Uploading image for item ${editingItem.id}...`);
+            
+            try {
+              // Convert the file to a Uint8Array for the IPC call
+              const arrayBuffer = await pendingImage.file.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+              
+              // For global items (trash loot and convertible), use global upload
+              // For marketplace items, use item-specific upload
+              let imageUploadResult;
+              if (editingItem.type === 'trash_loot' || editingItem.type === 'conversion') {
+                imageUploadResult = await window.electronAPI.items.uploadImageForBdoItem(
+                  bdoItemId, 
+                  uint8Array, 
+                  pendingImage.file.name
+                );
+              } else {
+                imageUploadResult = await window.electronAPI.items.uploadImage(
+                  editingItem.id, 
+                  uint8Array, 
+                  pendingImage.file.name
+                );
+              }
+              
+              if (imageUploadResult.success) {
+                console.log(`✅ Image uploaded successfully for edited item`);
+              } else {
+                console.warn('Failed to upload image:', imageUploadResult.error);
+                // Don't show alert here as the item was updated successfully
+              }
+            } catch (imageError) {
+              console.warn('Failed to upload image:', imageError);
+            }
+          }
+          
           await loadItems();
           handleCloseModal();
         } else {
           alert(`Failed to update item: ${result.error}`);
         }
       } else {
-        // Initialize region statuses
-        const initialStatuses: RegionStatusItem[] = REGIONS.map(region => ({
-          region,
-          status: 'pending' as RegionStatus,
-          message: 'Waiting...'
-        }));
-        
-        setRegionStatuses(initialStatuses);
+        // Handle different item types differently
+        if (activeTab === 'trash_loot' || activeTab === 'conversion') {
+          // For trash loot and convertible items, create only once (no regions)
+          const initialStatuses: RegionStatusItem[] = [{
+            region: 'GLOBAL',
+            status: 'pending' as RegionStatus,
+            message: 'Waiting...'
+          }];
+          
+          setRegionStatuses(initialStatuses);
+          setStatusModalType('create');
+          setShowCreationStatusModal(true);
+          setCreationInProgress(true);
+          handleCloseModal(); // Close the input modal
+          
+          // Update status to loading
+          setRegionStatuses([{
+            region: 'GLOBAL',
+            status: 'loading' as RegionStatus,
+            message: 'Creating...'
+          }]);
+          
+          try {
+            // Use the manual method for trash loot and convertible items
+            const itemData = {
+              name: formData.name,
+              bdo_item_id: bdoItemId,
+              region: null, // No region for global items
+              base_price: activeTab === 'trash_loot' ? parseInt(formData.base_price) || 0 : undefined,
+              convertible_to_bdo_item_id: activeTab === 'conversion' ? parseInt(formData.convertible_to_bdo_item_id) || undefined : undefined,
+              conversion_ratio: activeTab === 'conversion' ? parseInt(formData.conversion_ratio) || 1 : undefined,
+              type: activeTab as ItemType
+            };
+            const result = await window.electronAPI.items.createManual(itemData);
+            
+            if (result.unarchived) {
+              setRegionStatuses([{
+                region: 'GLOBAL',
+                status: 'unarchived' as RegionStatus,
+                message: 'Unarchived existing item',
+                itemName: result.data?.name
+              }]);
+            } else if (result.skipped) {
+              setRegionStatuses([{
+                region: 'GLOBAL',
+                status: 'skipped' as RegionStatus,
+                message: 'Already exists'
+              }]);
+            } else if (result.success) {
+              setRegionStatuses([{
+                region: 'GLOBAL',
+                status: 'success' as RegionStatus,
+                message: 'Created successfully',
+                itemName: result.data?.name
+              }]);
+              
+              // Handle image upload for global items if there's a pending image
+              if (pendingImage) {
+                console.log(`📸 Uploading image for global item (BDO Item ID ${bdoItemId})...`);
+                
+                try {
+                  // Convert the file to a Uint8Array for the IPC call
+                  const arrayBuffer = await pendingImage.file.arrayBuffer();
+                  const uint8Array = new Uint8Array(arrayBuffer);
+                  
+                  // Upload image once and apply to all items with this bdo_item_id
+                  const imageUploadResult = await window.electronAPI.items.uploadImageForBdoItem(
+                    bdoItemId, 
+                    uint8Array, 
+                    pendingImage.file.name
+                  );
+                  
+                  if (imageUploadResult.success) {
+                    console.log(`✅ Image uploaded successfully for global item`);
+                  } else {
+                    console.warn('Failed to upload image:', imageUploadResult.error);
+                  }
+                } catch (imageError) {
+                  console.warn('Failed to upload image:', imageError);
+                }
+              }
+            } else {
+              setRegionStatuses([{
+                region: 'GLOBAL',
+                status: 'error' as RegionStatus,
+                message: result.error || 'Unknown error'
+              }]);
+            }
+          } catch (error) {
+            setRegionStatuses([{
+              region: 'GLOBAL',
+              status: 'error' as RegionStatus,
+              message: error instanceof Error ? error.message : 'Unknown error'
+            }]);
+          } finally {
+            setCreationInProgress(false);
+            
+            // Handle image upload for global items if there's a pending image
+            if (pendingImage && regionStatuses.some(status => status.status === 'success')) {
+              console.log(`📸 Uploading image for BDO Item ID ${bdoItemId}...`);
+              
+              try {
+                // Convert the file to a Uint8Array for the IPC call
+                const arrayBuffer = await pendingImage.file.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                // Upload image once and apply to all items with this bdo_item_id
+                const imageUploadResult = await window.electronAPI.items.uploadImageForBdoItem(
+                  bdoItemId, 
+                  uint8Array, 
+                  pendingImage.file.name
+                );
+                
+                if (imageUploadResult.success) {
+                  console.log(`✅ Image uploaded successfully for global item`);
+                } else {
+                  console.warn('Failed to upload image:', imageUploadResult.error);
+                }
+              } catch (imageError) {
+                console.warn('Failed to upload image:', imageError);
+              }
+            }
+            
+            await loadItems();
+          }
+        } else {
+          // Initialize region statuses for marketplace items
+          const initialStatuses: RegionStatusItem[] = REGIONS.map(region => ({
+            region,
+            status: 'pending' as RegionStatus,
+            message: 'Waiting...'
+          }));
+          
+          setRegionStatuses(initialStatuses);
         setStatusModalType('create');
         setShowCreationStatusModal(true);
         setCreationInProgress(true);
@@ -302,7 +580,8 @@ const ItemManagement: React.FC = () => {
         }
         
         await loadItems();
-      }
+        } // Close the marketplace items else block
+      } // Close the main if/else block for editing vs creating
     } catch (error) {
       console.error('Error saving item:', error);
       alert('An error occurred while saving the item');
@@ -314,17 +593,38 @@ const ItemManagement: React.FC = () => {
 
   const handleEdit = (item: Item) => {
     setEditingItem(item);
+    setOriginalImageUrl(item.image_url); // Store the original image URL
     setFormData({
-      bdo_item_id: item.bdo_item_id.toString()
+      bdo_item_id: item.bdo_item_id.toString(),
+      name: item.name,
+      convertible_to_bdo_item_id: item.convertible_to_bdo_item_id?.toString() || '',
+      conversion_ratio: item.conversion_ratio?.toString() || '1',
+      base_price: item.base_price?.toString() || ''
     });
+    
+    // Set the correct tab based on item type
+    if (item.type === 'trash_loot') {
+      setActiveTab('trash_loot');
+    } else if (item.type === 'conversion') {
+      setActiveTab('conversion');
+    } else {
+      setActiveTab('marketplace');
+    }
+    
     handleOpenModal();
   };
 
   const handleCloseModal = () => {
     setEditingItem(null);
+    setOriginalImageUrl(undefined);
     setFormData({
-      bdo_item_id: ''
+      bdo_item_id: '',
+      name: '',
+      convertible_to_bdo_item_id: '',
+      conversion_ratio: '1',
+      base_price: ''
     });
+    setActiveTab('marketplace');
     setPendingImage(null);
     setImageUploadError(null);
     setShowSimpleModal(false);
@@ -571,11 +871,15 @@ const ItemManagement: React.FC = () => {
   };
 
   const handleSort = (field: keyof Item) => {
+    console.log('Sorting by field:', field, 'Current field:', sortField, 'Current direction:', sortDirection);
     if (sortField === field) {
       // If clicking the same field, toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      console.log('Toggling direction to:', newDirection);
+      setSortDirection(newDirection);
     } else {
       // If clicking a new field, set it as sort field with ascending direction
+      console.log('Setting new sort field:', field);
       setSortField(field);
       setSortDirection('asc');
     }
@@ -634,7 +938,6 @@ const ItemManagement: React.FC = () => {
         console.log(`✅ Bulk image uploaded successfully and applied to ${imageUploadResult.data?.updatedItems || 0} items`);
         await loadItems();
         handleCloseBulkEditModal();
-        alert(`✅ Image updated for ${imageUploadResult.data?.updatedItems || 0} items across all regions!`);
       } else {
         setImageUploadError(imageUploadResult.error || 'Failed to upload image');
       }
@@ -651,42 +954,29 @@ const ItemManagement: React.FC = () => {
       return;
     }
 
-    const itemName = bulkEditItems[0]?.name || 'items';
-    const confirmed = await showConfirmationModal({
-      title: 'Remove Images',
-      message: `Are you sure you want to remove the image from all "${itemName}" items across all regions?`,
-      confirmText: 'Remove Images',
-      onConfirm: () => {}, // Will be handled by the promise resolution
-      isDestructive: true
-    });
-
-    if (confirmed) {
-      try {
-        setSyncing(true);
-        console.log(`🗑️ Bulk removing images for BDO Item ID ${bulkEditingBdoItemId}...`);
-        
-        // Remove images from all items with this bdo_item_id
-        let successCount = 0;
-        for (const item of bulkEditItems) {
-          try {
-            const result = await window.electronAPI.items.removeImage(item.id);
-            if (result.success) {
-              successCount++;
-            }
-          } catch (error) {
-            console.warn(`Failed to remove image from item ${item.id}:`, error);
+    try {
+      setSyncing(true);
+      console.log(`🗑️ Bulk removing images for BDO Item ID ${bulkEditingBdoItemId}...`);
+      
+      // Remove images from all items with this bdo_item_id
+      let successCount = 0;
+      for (const item of bulkEditItems) {
+        try {
+          const result = await window.electronAPI.items.removeImage(item.id);
+          if (result.success) {
+            successCount++;
           }
+        } catch (error) {
+          console.warn(`Failed to remove image from item ${item.id}:`, error);
         }
-        
-        await loadItems();
-        handleCloseBulkEditModal();
-        alert(`✅ Image removed from ${successCount}/${bulkEditItems.length} items!`);
-      } catch (error) {
-        console.error('Failed to remove bulk images:', error);
-        alert('Failed to remove images');
-      } finally {
-        setSyncing(false);
       }
+      
+      await loadItems();
+      handleCloseBulkEditModal();
+    } catch (error) {
+      console.error('Failed to remove bulk images:', error);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -697,7 +987,36 @@ const ItemManagement: React.FC = () => {
     return sortDirection === 'asc' ? '↑' : '↓';
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number, item?: Item) => {
+    // Show dash for convertible items (they don't have prices)
+    if (item?.convertible_to_bdo_item_id) {
+      return '—';
+    }
+    
+    // Show dash for 0 values
+    if (price === 0) {
+      return '—';
+    }
+    
+    if (price >= 1000000) {
+      return `${(price / 1000000).toFixed(1)}M`;
+    } else if (price >= 1000) {
+      return `${(price / 1000).toFixed(1)}K`;
+    }
+    return price.toLocaleString();
+  };
+
+  const formatLastSoldPrice = (price: number, item?: Item) => {
+    // Show dash for convertible items or trash items (they can't be sold)
+    if (item?.type === 'conversion' || item?.type === 'trash_loot') {
+      return '—';
+    }
+    
+    // Show dash for 0 values
+    if (price === 0) {
+      return '—';
+    }
+    
     if (price >= 1000000) {
       return `${(price / 1000000).toFixed(1)}M`;
     } else if (price >= 1000) {
@@ -766,7 +1085,7 @@ const ItemManagement: React.FC = () => {
         </div>
       ) : (
         <div className="items-table-container">
-          <table className="items-table">
+          <table className="items-table" key={`sort-${sortField}-${sortDirection}`}>
             <thead>
               <tr>
                 <th></th>
@@ -791,9 +1110,8 @@ const ItemManagement: React.FC = () => {
             <tbody>
               {selectedRegion === 'ALL' ? (
                 // Show grouped items when viewing all regions
-                Object.entries(groupedItems).map(([bdoItemId, itemGroup]) => {
-                  const representativeItem = itemGroup[0]; // Use first item as representative
-                  const isExpanded = expandedGroups.has(parseInt(bdoItemId));
+                sortedGroupedItems.map(({ bdoItemId, itemGroup, representativeItem }) => {
+                  const isExpanded = expandedGroups.has(bdoItemId);
                   const hasMultipleRegions = itemGroup.length > 1;
                   
                   return (
@@ -824,7 +1142,7 @@ const ItemManagement: React.FC = () => {
                             {hasMultipleRegions && (
                               <button
                                 className="expand-toggle"
-                                onClick={() => toggleGroupExpansion(parseInt(bdoItemId))}
+                                onClick={() => toggleGroupExpansion(bdoItemId)}
                                 title={isExpanded ? 'Collapse regions' : 'Expand regions'}
                               >
                                 {isExpanded ? '▼' : '▶'}
@@ -841,13 +1159,13 @@ const ItemManagement: React.FC = () => {
                               <span className="region-count">({itemGroup.length} regions)</span>
                             </div>
                           ) : (
-                            <span className={`region-badge region-${representativeItem.region.toLowerCase()}`}>
-                              {representativeItem.region}
+                            <span className={`region-badge region-${representativeItem.region?.toLowerCase() || 'global'}`}>
+                              {representativeItem.region || 'GLOBAL'}
                             </span>
                           )}
                         </td>
-                        <td>{hasMultipleRegions ? '—' : formatPrice(representativeItem.base_price)}</td>
-                        <td>{hasMultipleRegions ? '—' : formatPrice(representativeItem.last_sold_price)}</td>
+                        <td>{hasMultipleRegions || representativeItem.convertible_to_bdo_item_id ? '—' : formatPrice(representativeItem.base_price, representativeItem)}</td>
+                        <td>{hasMultipleRegions || representativeItem.convertible_to_bdo_item_id ? '—' : formatLastSoldPrice(representativeItem.last_sold_price, representativeItem)}</td>
                         <td>
                           <div className="actions">
                             {representativeItem.archived ? (
@@ -862,7 +1180,7 @@ const ItemManagement: React.FC = () => {
                                 {hasMultipleRegions && (
                                   <button
                                     className="btn btn-small btn-primary"
-                                    onClick={() => handleBulkEdit(parseInt(bdoItemId))}
+                                    onClick={() => handleBulkEdit(bdoItemId)}
                                     title="Bulk edit all regions for this item"
                                   >
                                     Bulk Edit
@@ -870,12 +1188,15 @@ const ItemManagement: React.FC = () => {
                                 )}
                                 {!hasMultipleRegions && (
                                   <>
-                                    <button
-                                      className="btn btn-small btn-secondary"
-                                      onClick={() => handleEdit(representativeItem)}
-                                    >
-                                      Edit
-                                    </button>
+                                    {/* Only show Edit button for trash loot and convertible items */}
+                                    {(representativeItem.type === 'trash_loot' || representativeItem.type === 'conversion') && (
+                                      <button
+                                        className="btn btn-small btn-secondary"
+                                        onClick={() => handleEdit(representativeItem)}
+                                      >
+                                        Edit
+                                      </button>
+                                    )}
                                     <button
                                       className="btn btn-small btn-warning"
                                       onClick={() => handleArchive(representativeItem)}
@@ -898,12 +1219,12 @@ const ItemManagement: React.FC = () => {
                           </td>
                           <td></td>
                           <td>
-                            <span className={`region-badge region-${item.region.toLowerCase()}`}>
-                              {item.region}
+                            <span className={`region-badge region-${item.region?.toLowerCase() || 'global'}`}>
+                              {item.region || 'GLOBAL'}
                             </span>
                           </td>
-                          <td>{formatPrice(item.base_price)}</td>
-                          <td>{formatPrice(item.last_sold_price)}</td>
+                          <td>{formatPrice(item.base_price, item)}</td>
+                          <td>{formatLastSoldPrice(item.last_sold_price, item)}</td>
                           <td>
                             <div className="actions">
                               {item.archived ? (
@@ -915,12 +1236,15 @@ const ItemManagement: React.FC = () => {
                                 </button>
                               ) : (
                                 <>
-                                  <button
-                                    className="btn btn-small btn-secondary"
-                                    onClick={() => handleEdit(item)}
-                                  >
-                                    Edit
-                                  </button>
+                                  {/* Only show Edit button for trash loot and convertible items */}
+                                  {(item.type === 'trash_loot' || item.type === 'conversion') && (
+                                    <button
+                                      className="btn btn-small btn-secondary"
+                                      onClick={() => handleEdit(item)}
+                                    >
+                                      Edit
+                                    </button>
+                                  )}
                                   <button
                                     className="btn btn-small btn-warning"
                                     onClick={() => handleArchive(item)}
@@ -962,12 +1286,12 @@ const ItemManagement: React.FC = () => {
                     <td className="item-name">{item.name}</td>
                     <td>{item.bdo_item_id}</td>
                     <td>
-                      <span className={`region-badge region-${item.region.toLowerCase()}`}>
-                        {item.region}
+                      <span className={`region-badge region-${item.region?.toLowerCase() || 'global'}`}>
+                        {item.region || 'GLOBAL'}
                       </span>
                     </td>
-                    <td>{formatPrice(item.base_price)}</td>
-                    <td>{formatPrice(item.last_sold_price)}</td>
+                    <td>{formatPrice(item.base_price, item)}</td>
+                    <td>{formatLastSoldPrice(item.last_sold_price, item)}</td>
                     <td>
                       <div className="actions">
                         {item.archived ? (
@@ -979,12 +1303,15 @@ const ItemManagement: React.FC = () => {
                           </button>
                         ) : (
                           <>
-                            <button
-                              className="btn btn-small btn-secondary"
-                              onClick={() => handleEdit(item)}
-                            >
-                              Edit
-                            </button>
+                            {/* Only show Edit button for trash loot and convertible items */}
+                            {(item.type === 'trash_loot' || item.type === 'conversion') && (
+                              <button
+                                className="btn btn-small btn-secondary"
+                                onClick={() => handleEdit(item)}
+                              >
+                                Edit
+                              </button>
+                            )}
                             <button
                               className="btn btn-small btn-warning"
                               onClick={() => handleArchive(item)}
@@ -1055,7 +1382,7 @@ const ItemManagement: React.FC = () => {
             <div className="creation-status-header">
               <h3>{statusModalType === 'create' ? 'Creating Items' : 'Syncing Prices'}</h3>
               <div className="creation-progress">
-                <span>{getCompletedCount()}/{statusModalType === 'create' ? REGIONS.length : selectedRegions.length} regions completed</span>
+                <span>{getCompletedCount()}/{regionStatuses.length} regions completed</span>
                 {!creationInProgress && (
                   <button className="close-btn" onClick={handleCloseCreationStatusModal}>
                     ✕
@@ -1168,6 +1495,7 @@ const ItemManagement: React.FC = () => {
         title={editingItem ? 'Edit Item' : 'Add New Item'}
       >
         <form onSubmit={handleSubmit}>
+          {/* BDO Item ID field - always at the top since all item types need it */}
           <div className="form-group">
             <label htmlFor="bdo_item_id">BDO Item ID:</label>
             <input
@@ -1182,38 +1510,169 @@ const ItemManagement: React.FC = () => {
               placeholder="Enter BDO Item ID (e.g., 721003)"
               required
               autoFocus
+              disabled={!!editingItem} // Disable when editing
+              style={{
+                backgroundColor: editingItem ? '#e9ecef' : '',
+                color: editingItem ? '#6c757d' : '',
+                cursor: editingItem ? 'not-allowed' : 'text',
+                opacity: editingItem ? 0.6 : 1
+              }}
             />
             <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>
-              The item name and prices will be automatically fetched from the BDO API for all regions
+              {!editingItem && activeTab === 'marketplace' 
+                ? 'The item name and prices will be automatically fetched from the BDO API for all regions'
+                : editingItem 
+                  ? 'Cannot be changed when editing'
+                  : 'Enter the unique BDO Item ID for this item'
+              }
             </small>
           </div>
 
-          {/* Only show image upload when adding new items */}
+          {/* Item Type Selector - sleek dropdown instead of tabs */}
           {!editingItem && (
             <div className="form-group">
-              <label>Item Image:</label>
-              <ImageUpload
-                onImageProcessed={(processedImage) => {
-                  setPendingImage(processedImage);
-                  setImageUploadError(null);
-                }}
-                onImageRemoved={() => {
-                  setPendingImage(null);
-                  setImageUploadError(null);
-                }}
-                maxWidth={200}
-                maxHeight={200}
-              />
-              {imageUploadError && (
-                <small style={{ color: '#f38ba8', marginTop: '8px', display: 'block' }}>
-                  {imageUploadError}
-                </small>
-              )}
+              <label htmlFor="item_type">Item Type:</label>
+              <select
+                id="item_type"
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value as 'marketplace' | 'trash_loot' | 'conversion')}
+                className="item-type-selector"
+              >
+                <option value="marketplace">Marketplace Item</option>
+                <option value="trash_loot">Trash Loot</option>
+                <option value="conversion">Convertible Item</option>
+              </select>
               <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>
-                This image will be applied to all items created from this BDO Item ID
+                {activeTab === 'marketplace' 
+                  ? 'Items that are traded on the marketplace with dynamic pricing'
+                  : activeTab === 'trash_loot'
+                    ? 'Items that are sold to vendors for a fixed price'
+                    : 'Items that convert to other items (e.g., shards to black stones)'
+                }
               </small>
             </div>
           )}
+
+          {/* Conditional fields based on item type */}
+          {(activeTab === 'trash_loot' || activeTab === 'conversion') && (
+            <div className="form-group">
+              <label htmlFor="name">Item Name:</label>
+              <input
+                type="text"
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter item name"
+                required
+              />
+            </div>
+          )}
+
+          {activeTab === 'trash_loot' && (
+            <div className="form-group">
+              <label htmlFor="base_price">Vendor Price (Silver):</label>
+              <input
+                type="text"
+                id="base_price"
+                value={formData.base_price}
+                onChange={(e) => {
+                  // Only allow numbers
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setFormData({ ...formData, base_price: value });
+                }}
+                placeholder="Enter vendor price (e.g., 50000)"
+                required
+              />
+              <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>
+                The amount this trash loot sells for to vendors
+              </small>
+            </div>
+          )}
+
+          {activeTab === 'conversion' && (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="convertible_to_bdo_item_id">Converts to BDO Item ID:</label>
+                  <input
+                    type="text"
+                    id="convertible_to_bdo_item_id"
+                    value={formData.convertible_to_bdo_item_id}
+                    onChange={(e) => {
+                      // Only allow numbers
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, convertible_to_bdo_item_id: value });
+                    }}
+                    placeholder="Enter target item ID"
+                    required
+                    disabled={!!editingItem} // Disable when editing
+                    style={{
+                      backgroundColor: editingItem ? '#e9ecef' : '',
+                      color: editingItem ? '#6c757d' : '',
+                      cursor: editingItem ? 'not-allowed' : 'text',
+                      opacity: editingItem ? 0.6 : 1
+                    }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="conversion_ratio">Conversion Ratio:</label>
+                  <input
+                    type="text"
+                    id="conversion_ratio"
+                    value={formData.conversion_ratio}
+                    onChange={(e) => {
+                      // Only allow numbers
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, conversion_ratio: value || '1' });
+                    }}
+                    placeholder="e.g., 5"
+                    required
+                  />
+                </div>
+              </div>
+              <small style={{ color: '#666', marginTop: '4px', marginBottom: '16px', display: 'block' }}>
+                How many of this item convert to 1 of the target item (e.g., 5 shards = 1 black stone)
+              </small>
+            </>
+          )}
+
+          {/* Divider between form fields and image upload */}
+          {!editingItem && (
+            <div className="form-divider"></div>
+          )}
+
+          {/* Image upload section */}
+          <div className="form-group">
+            <label>Item Image:</label>
+            <ImageUpload
+              currentImageUrl={editingItem?.image_url}
+              onImageProcessed={(processedImage) => {
+                setPendingImage(processedImage);
+                setImageUploadError(null);
+              }}
+              onImageRemoved={async () => {
+                setPendingImage(null);
+                setImageUploadError(null);
+                // For editing items, just mark the image for removal and update the editing state
+                if (editingItem) {
+                  setEditingItem(prev => prev ? { ...prev, image_url: undefined } : null);
+                }
+              }}
+              maxWidth={200}
+              maxHeight={200}
+            />
+            {imageUploadError && (
+              <small style={{ color: '#f38ba8', marginTop: '8px', display: 'block' }}>
+                {imageUploadError}
+              </small>
+            )}
+            <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>
+              {editingItem 
+                ? (editingItem.image_url ? 'Click the ✕ button to remove the image, or upload a new one to replace it' : 'Upload an image for this item')
+                : 'This image will be applied to all items created from this BDO Item ID'
+              }
+            </small>
+          </div>
 
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={handleCloseModal}>

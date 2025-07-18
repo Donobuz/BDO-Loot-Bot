@@ -4,7 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { itemsService } from '../services/db/items';
+import { adminDatabase } from '../services/db/admin';
 import { StorageService } from '../services/db/storage';
+import { ItemType } from '../services/db/types';
 
 // Arsha API base URL
 const ARSHA_API_BASE = 'https://api.arsha.io/v2';
@@ -126,7 +128,7 @@ export const itemHandlers = {
     }
   },
 
-  'items:create-from-api': async (event: IpcMainInvokeEvent, bdoItemId: number, region: string) => {
+  'items:create-from-api': async (event: IpcMainInvokeEvent, bdoItemId: number, region: string, conversionData?: { convertible_to_bdo_item_id: number | null; conversion_ratio: string; type: ItemType; base_price: number | null } | null) => {
     try {
       // Check if item already exists for this region (including archived)
       const existingItem = await itemsService.getByBdoIdAndRegionIncludingArchived(bdoItemId, region);
@@ -163,10 +165,14 @@ export const itemHandlers = {
       const newItem = {
         name: arshaData.name,
         bdo_item_id: bdoItemId,
-        base_price: arshaData.basePrice,
+        base_price: conversionData?.type === 'trash_loot' && conversionData?.base_price ? conversionData.base_price : arshaData.basePrice,
         last_sold_price: arshaData.lastSoldPrice,
         loot_table_ids: [], // Empty for now, can be set later
-        region: region
+        region: region,
+        // Set type based on conversion data or default to marketplace
+        type: conversionData?.type || 'marketplace',
+        convertible_to_bdo_item_id: conversionData?.convertible_to_bdo_item_id || null,
+        conversion_ratio: conversionData?.conversion_ratio ? parseInt(conversionData.conversion_ratio) : 1,
       };
       
       const result = await itemsService.create(newItem);
@@ -174,6 +180,69 @@ export const itemHandlers = {
       return result;
     } catch (error) {
       console.error('Error creating item from API:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  },
+
+  'items:create-manual': async (event: IpcMainInvokeEvent, itemData: { name: string; bdo_item_id: number; region?: string | null; base_price?: number; convertible_to_bdo_item_id?: number; conversion_ratio?: number; type?: ItemType }) => {
+    try {
+      // For trash loot and convertible items, use null region (global)
+      const effectiveRegion = (itemData.type === 'trash_loot' || itemData.type === 'conversion') ? null : itemData.region;
+      
+      // Check if item already exists for this region (including archived)
+      const existingItem = effectiveRegion 
+        ? await itemsService.getByBdoIdAndRegionIncludingArchived(itemData.bdo_item_id, effectiveRegion)
+        : await itemsService.getByBdoIdGlobalIncludingArchived(itemData.bdo_item_id);
+        
+      if (existingItem.success && existingItem.data) {
+        // If item is archived, unarchive it
+        if (existingItem.data.archived) {
+          console.log(`Item ${itemData.bdo_item_id} found archived ${effectiveRegion ? `for region ${effectiveRegion}` : 'globally'}, unarchiving...`);
+          const unarchiveResult = await itemsService.unarchive(existingItem.data.id);
+          if (unarchiveResult.success) {
+            return { 
+              success: true, 
+              unarchived: true, 
+              data: unarchiveResult.data,
+              message: `Item unarchived ${effectiveRegion ? `for ${effectiveRegion} region` : 'globally'}` 
+            };
+          } else {
+            return { success: false, error: `Failed to unarchive item: ${unarchiveResult.error}` };
+          }
+        } else {
+          // Item exists and is active
+          console.log(`Item ${itemData.bdo_item_id} already exists and is active ${effectiveRegion ? `for region ${effectiveRegion}` : 'globally'}`);
+          return { 
+            success: true, 
+            skipped: true, 
+            data: existingItem.data,
+            message: `Item already exists ${effectiveRegion ? `in ${effectiveRegion} region` : 'globally'}` 
+          };
+        }
+      }
+
+      // For convertible items, don't auto-calculate prices since target item prices vary by region
+      // Users should set base_price manually if needed
+      let calculatedBasePrice = itemData.base_price || 0;
+      let calculatedLastSoldPrice = 0;
+
+      const newItem = {
+        name: itemData.name,
+        bdo_item_id: itemData.bdo_item_id,
+        base_price: calculatedBasePrice,
+        last_sold_price: calculatedLastSoldPrice,
+        loot_table_ids: [], // Empty for now, can be set later
+        region: effectiveRegion || null,
+        type: itemData.type || 'marketplace',
+        convertible_to_bdo_item_id: itemData.convertible_to_bdo_item_id || null,
+        conversion_ratio: itemData.conversion_ratio || 1,
+      };
+      
+      const result = await itemsService.create(newItem);
+      console.log(`Created manual item: ${itemData.name} ${effectiveRegion ? `for region ${effectiveRegion}` : 'globally'}`);
+      return result;
+    } catch (error) {
+      console.error('Error creating manual item:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
@@ -216,7 +285,14 @@ export const itemHandlers = {
 
       const regionItems = regionItemsResult.data;
       
-      for (const item of regionItems) {
+      // Filter to only marketplace items
+      const marketplaceItems = regionItems.filter(item => {
+        return item.type === 'marketplace';
+      });
+      
+      console.log(`Syncing prices for ${marketplaceItems.length} marketplace items out of ${regionItems.length} total items in ${region}`);
+      
+      for (const item of marketplaceItems) {
         try {
           const arshaData = await fetchItemFromArsha(item.bdo_item_id, region);
           
@@ -267,7 +343,7 @@ export const itemHandlers = {
         itemId,
         processedImageBuffer,
         originalName,
-        oldImageUrl
+        oldImageUrl || undefined
       );
 
       if (!uploadResult.success) {
@@ -300,30 +376,41 @@ export const itemHandlers = {
 
   'items:remove-image': async (event: IpcMainInvokeEvent, itemId: number) => {
     try {
+      console.log('🗑️ [BACKEND] removeImage called for itemId:', itemId);
+      
       // Get current item to find image URL
       const itemResult = await itemsService.getById(itemId);
       
       if (!itemResult.success || !itemResult.data) {
+        console.log('❌ [BACKEND] Item not found:', itemId);
         return { success: false, error: 'Item not found' };
       }
 
       const item = itemResult.data;
+      console.log('📋 [BACKEND] Current item image_url:', item.image_url);
       
       // Remove image from Supabase Storage if it exists
       if (item.image_url) {
+        console.log('🗂️ [BACKEND] Removing from storage:', item.image_url);
         const removeResult = await storageService.removeImage(item.image_url);
         if (!removeResult.success) {
-          console.warn('Failed to remove image from storage:', removeResult.error);
+          console.warn('⚠️ [BACKEND] Failed to remove image from storage:', removeResult.error);
           // Continue with database update even if storage removal fails
+        } else {
+          console.log('✅ [BACKEND] Image removed from storage successfully');
         }
+      } else {
+        console.log('ℹ️ [BACKEND] No image_url to remove from storage');
       }
 
-      // Update item to remove image_url
-      const updateResult = await itemsService.update(itemId, { image_url: undefined });
+      // Update item to remove image_url using admin permissions
+      console.log('💾 [BACKEND] Updating database to set image_url to null for itemId:', itemId);
+      const updateResult = await adminDatabase.updateItemAsAdmin(itemId, { image_url: null });
+      console.log('💾 [BACKEND] Admin database update result:', updateResult);
       
       return updateResult;
     } catch (error) {
-      console.error('Error removing item image:', error);
+      console.error('❌ [BACKEND] Error removing item image:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Failed to remove image' };
     }
   },
@@ -339,12 +426,22 @@ export const itemHandlers = {
         .webp({ quality: 80 })
         .toBuffer();
 
+      // Get current image URL from any item with this bdo_item_id to remove old image
+      let oldImageUrl: string | undefined;
+      const existingItemsResult = await itemsService.getByBdoItemId(bdoItemId);
+      if (existingItemsResult.success && existingItemsResult.data && existingItemsResult.data.length > 0) {
+        // Use the first item's image_url (they should all be the same for a bdo_item_id)
+        oldImageUrl = existingItemsResult.data[0].image_url || undefined;
+        console.log(`📋 Found existing image for BDO Item ID ${bdoItemId}: ${oldImageUrl}`);
+      }
+
       // Upload image to storage (single upload for all regions)
       console.log(`📤 Uploading image for BDO Item ID ${bdoItemId}...`);
       const uploadResult = await storageService.uploadImageForBdoItem(
         processedImageBuffer,
         originalName,
-        bdoItemId
+        bdoItemId,
+        oldImageUrl
       );
 
       if (!uploadResult.success) {

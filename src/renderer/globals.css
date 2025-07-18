@@ -8,6 +8,16 @@
   --text-secondary: #a0a0b2;
   --text-muted: #8b8b9a;
   
+  /* Modal-specific Colors */
+  --modal-bg: #36393f;
+  --modal-border: #40444b;
+  --modal-header-bg: #2f3136;
+  --input-bg: #2f3136;
+  --input-border: #40444b;
+  --input-hover-bg: #36393f;
+  --input-focus-border: #5865f2;
+  --separator-color: #4f545c;
+  
   /* Discord Colors */
   --discord-primary: linear-gradient(45deg, #5865f2, #4752c4);
   --discord-hover: linear-gradient(45deg, #4752c4, #3c4693);

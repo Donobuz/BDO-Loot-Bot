@@ -24,7 +24,8 @@ declare global {
         getAll: () => Promise<{ success: boolean; data?: Item[]; error?: string }>;
         getById: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
         create: (item: Omit<Item, 'id' | 'created' | 'updated'>) => Promise<{ success: boolean; data?: Item; error?: string }>;
-        createFromAPI: (bdoItemId: number, region: string) => Promise<{ success: boolean; data?: Item; error?: string; skipped?: boolean; unarchived?: boolean; message?: string }>;
+        createFromAPI: (bdoItemId: number, region: string, conversionData?: { convertible_to_bdo_item_id: number | null; conversion_ratio: string; type: ItemType; base_price: number | null } | null) => Promise<{ success: boolean; data?: Item; error?: string; skipped?: boolean; unarchived?: boolean; message?: string }>;
+        createManual: (itemData: { name: string; bdo_item_id: number; region?: string | null; base_price?: number; convertible_to_bdo_item_id?: number; conversion_ratio?: number; type?: ItemType }) => Promise<{ success: boolean; data?: Item; error?: string; skipped?: boolean; unarchived?: boolean; message?: string }>;
         update: (id: number, updates: Partial<Omit<Item, 'id' | 'created' | 'updated'>>) => Promise<{ success: boolean; data?: Item; error?: string }>;
         archive: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
         unarchive: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
@@ -34,6 +35,29 @@ declare global {
         uploadImageForBdoItem: (bdoItemId: number, imageBuffer: Uint8Array, originalName: string) => Promise<{ success: boolean; data?: { imageUrl: string; fileName: string; updatedItems: number }; error?: string }>;
         getByBdoItemId: (bdoItemId: number) => Promise<{ success: boolean; data?: Item[]; error?: string }>;
       };
+      lootTables: {
+        getAll: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
+        getActive: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
+        getArchived: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
+        getById: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        getByLocationId: (locationId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        create: (lootTable: Omit<LootTable, 'id' | 'created' | 'updated'>) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        update: (id: number, updates: Partial<Omit<LootTable, 'id' | 'created' | 'updated'>>) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        addItem: (lootTableId: number, itemId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        removeItem: (lootTableId: number, itemId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        archive: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+        unarchive: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
+      };
+      user: {
+        updateRegion: (discordId: string, region: string) => Promise<{ success: boolean; data?: User; error?: string }>;
+        update: (id: number, updates: any) => Promise<{ success: boolean; data?: User; error?: string }>;
+      };
+      userPreferences: {
+        get: (userId: string) => Promise<{ success: boolean; data?: UserPreferences; error?: string }>;
+        update: (userId: string, preferences: Partial<UserPreferences>) => Promise<{ success: boolean; data?: UserPreferences; error?: string }>;
+        create: (userId: string, preferences: Partial<UserPreferences>) => Promise<{ success: boolean; data?: UserPreferences; error?: string }>;
+        getOrCreate: (userId: string, defaultPreferences?: Partial<UserPreferences>) => Promise<{ success: boolean; data?: UserPreferences; error?: string }>;
+      };
     };
   }
 }
@@ -41,12 +65,24 @@ declare global {
 // Database types
 export interface User {
   permissions: any;
-  id: number;
+  id: string; // Changed to string to match UUID
   discord_id: string;
   username: string;
   avatar?: string;
   created: string;
   updated: string;
+}
+
+export interface UserPreferences {
+  user_id: string;
+  preferred_region: string; // Default region for loot tables
+  display_regions: string[]; // Array of regions to display (["NA", "EU"] or ["ALL"])
+  created: string;
+  updated: string;
+}
+
+export interface UserWithPreferences extends User {
+  preferences?: UserPreferences;
 }
 
 export interface Location {
@@ -61,6 +97,9 @@ export interface Location {
   archived?: string | null;
 }
 
+// Item type enum
+export type ItemType = 'marketplace' | 'trash_loot' | 'conversion';
+
 export interface Item {
   id: number;
   name: string;
@@ -68,8 +107,22 @@ export interface Item {
   base_price: number;
   last_sold_price: number;
   loot_table_ids: number[];
-  region: string;
-  image_url?: string;
+  region: string | null; // Allow null for global items (trash loot, conversion)
+  image_url?: string | null;
+  created: string;
+  updated: string;
+  archived?: string | null;
+  // Item type - determines behavior
+  type: ItemType;
+  // Conversion fields - only used when type is 'conversion'
+  convertible_to_bdo_item_id?: number | null;
+  conversion_ratio?: number;
+}
+
+export interface LootTable {
+  id: number;
+  location_id: number;
+  item_ids: number[];
   created: string;
   updated: string;
   archived?: string | null;

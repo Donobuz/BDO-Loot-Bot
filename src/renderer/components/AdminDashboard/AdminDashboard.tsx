@@ -3,6 +3,7 @@ import { User } from '../../types';
 import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
 import { LocationManagement } from './LocationManagement';
 import { ItemManagement } from './ItemManagement';
+import { LootTableManagement } from './LootTableManagement';
 import '../../globals.css';
 import './AdminDashboard.css';
 
@@ -14,7 +15,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'manage-locations' | 'manage-items'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'manage-locations' | 'manage-items' | 'manage-loot-tables'>('dashboard');
 
   const loadAdminData = useCallback(async () => {
     try {
@@ -59,7 +60,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
             Retry
           </button>
           <button onClick={onBack} className="back-button">
-            Back to Dashboard
+            Back to Admin Dashboard
           </button>
         </div>
       </div>
@@ -92,7 +93,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
           </div>
           <div className="header-actions">
             <button onClick={onBack} className="back-button">
-              ← Back to Dashboard
+              ← Back to User Dashboard
             </button>
           </div>
         </div>
@@ -135,6 +136,12 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
                   >
                     Manage Items
                   </button>
+                  <button 
+                    onClick={() => setCurrentView('manage-loot-tables')}
+                    className="admin-action-button"
+                  >
+                    Manage Loot Tables
+                  </button>
                 </div>
               </div>
 
@@ -166,7 +173,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
                 onClick={() => setCurrentView('dashboard')}
                 className="back-section-button"
               >
-                ← Back to Dashboard
+                ← Back to Admin Dashboard
               </button>
             </div>
             <LocationManagement />
@@ -180,10 +187,24 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
                 onClick={() => setCurrentView('dashboard')}
                 className="back-section-button"
               >
-                ← Back to Dashboard
+                ← Back to Admin Dashboard
               </button>
             </div>
             <ItemManagement />
+          </div>
+        )}
+
+        {currentView === 'manage-loot-tables' && (
+          <div className="admin-section">
+            <div className="section-header">
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="back-section-button"
+              >
+                ← Back to Admin Dashboard
+              </button>
+            </div>
+            <LootTableManagement />
           </div>
         )}
       </main>

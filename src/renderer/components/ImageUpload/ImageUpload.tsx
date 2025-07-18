@@ -1,9 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { processImageFile, validateImageFile, ProcessedImage } from '../../utils/imageUtils';
 import './ImageUpload.css';
 
 interface ImageUploadProps {
-  currentImageUrl?: string;
+  currentImageUrl?: string | null;
   onImageProcessed: (processedImage: ProcessedImage | null) => void;
   onImageRemoved?: () => void;
   disabled?: boolean;
@@ -23,6 +23,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync previewUrl with currentImageUrl prop changes
+  useEffect(() => {
+    setPreviewUrl(currentImageUrl || null);
+  }, [currentImageUrl]);
 
   const handleFileSelect = useCallback(async (file: File) => {
     setError(null);

@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getById: (id: number) => ipcRenderer.invoke('items:get-by-id', id),
     create: (item: any) => ipcRenderer.invoke('items:create', item),
     createFromAPI: (bdoItemId: number, region: string) => ipcRenderer.invoke('items:create-from-api', bdoItemId, region),
+    createManual: (itemData: any) => ipcRenderer.invoke('items:create-manual', itemData),
     update: (id: number, updates: any) => ipcRenderer.invoke('items:update', id, updates),
     archive: (id: number) => ipcRenderer.invoke('items:archive', id),
     unarchive: (id: number) => ipcRenderer.invoke('items:unarchive', id),
@@ -44,5 +45,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return ipcRenderer.invoke('items:upload-image-for-bdo-item', bdoItemId, buffer, originalName);
     },
     getByBdoItemId: (bdoItemId: number) => ipcRenderer.invoke('items:get-by-bdo-item-id', bdoItemId),
+  },
+
+  lootTables: {
+    getAll: () => ipcRenderer.invoke('loot-tables:get-all'),
+    getActive: () => ipcRenderer.invoke('loot-tables:get-active'),
+    getArchived: () => ipcRenderer.invoke('loot-tables:get-archived'),
+    getById: (id: number) => ipcRenderer.invoke('loot-tables:get-by-id', id),
+    getByLocationId: (locationId: number) => ipcRenderer.invoke('loot-tables:get-by-location-id', locationId),
+    create: (lootTable: any) => ipcRenderer.invoke('loot-tables:create', lootTable),
+    update: (id: number, updates: any) => ipcRenderer.invoke('loot-tables:update', id, updates),
+    addItem: (lootTableId: number, itemId: number) => ipcRenderer.invoke('loot-tables:add-item', lootTableId, itemId),
+    removeItem: (lootTableId: number, itemId: number) => ipcRenderer.invoke('loot-tables:remove-item', lootTableId, itemId),
+    archive: (id: number) => ipcRenderer.invoke('loot-tables:archive', id),
+    unarchive: (id: number) => ipcRenderer.invoke('loot-tables:unarchive', id),
+  },
+
+  user: {
+    updateRegion: (discordId: string, region: string) => ipcRenderer.invoke('user:update-region', discordId, region),
+    update: (id: number, updates: any) => ipcRenderer.invoke('user:update', id, updates),
+  },
+
+  userPreferences: {
+    get: (userId: string) => ipcRenderer.invoke('user-preferences:get', userId),
+    update: (userId: string, preferences: any) => ipcRenderer.invoke('user-preferences:update', userId, preferences),
+    create: (userId: string, preferences: any) => ipcRenderer.invoke('user-preferences:create', userId, preferences),
+    getOrCreate: (userId: string, defaultPreferences?: any) => ipcRenderer.invoke('user-preferences:get-or-create', userId, defaultPreferences),
   }
 });

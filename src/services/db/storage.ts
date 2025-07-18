@@ -277,8 +277,19 @@ export class StorageService extends BaseDatabase {
   /**
    * Upload an image for a specific bdo_item_id (shared across all regions)
    */
-  async uploadImageForBdoItem(imageBuffer: Buffer, originalName: string, bdoItemId: number): Promise<{ success: boolean; data?: { publicUrl: string; fileName: string }; error?: string }> {
+  async uploadImageForBdoItem(
+    imageBuffer: Buffer, 
+    originalName: string, 
+    bdoItemId: number, 
+    oldImageUrl?: string
+  ): Promise<{ success: boolean; data?: { publicUrl: string; fileName: string }; error?: string }> {
     try {
+      // Remove old image if it exists
+      if (oldImageUrl) {
+        console.log(`🗑️ Removing old image for BDO Item ID ${bdoItemId}: ${oldImageUrl}`);
+        await this.removeImage(oldImageUrl);
+      }
+
       // Ensure bucket exists first
       const bucketReady = await this.ensureBucketExists();
       if (!bucketReady) {

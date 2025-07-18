@@ -123,6 +123,31 @@ export class ItemsService extends BaseDatabase {
     }
   }
 
+  async getByBdoIdGlobalIncludingArchived(bdoItemId: number): Promise<{ success: boolean; data?: Item; error?: string }> {
+    try {
+      const { data, error } = await this.supabase
+        .from(this.tableName)
+        .select('*')
+        .eq('bdo_item_id', bdoItemId)
+        .is('region', null)
+        .order('created', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        // If no item found, return success with no data (not an error)
+        if (error.code === 'PGRST116') {
+          return { success: true, data: undefined };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: `Failed to fetch global item by BDO ID (including archived): ${error}` };
+    }
+  }
+
   async create(item: Omit<Item, 'id' | 'created' | 'updated'>): Promise<{ success: boolean; data?: Item; error?: string }> {
     try {
       const { data, error } = await this.supabase
@@ -134,6 +159,9 @@ export class ItemsService extends BaseDatabase {
           last_sold_price: item.last_sold_price,
           loot_table_ids: item.loot_table_ids,
           region: item.region,
+          type: item.type,
+          convertible_to_bdo_item_id: item.convertible_to_bdo_item_id || null,
+          conversion_ratio: item.conversion_ratio || 1,
         }])
         .select()
         .single();
@@ -150,6 +178,10 @@ export class ItemsService extends BaseDatabase {
 
   async update(id: number, updates: Partial<Omit<Item, 'id' | 'created' | 'updated'>>): Promise<{ success: boolean; data?: Item; error?: string }> {
     try {
+      console.log('💾 [DATABASE] ItemsService.update called');
+      console.log('💾 [DATABASE] Item ID:', id);
+      console.log('💾 [DATABASE] Updates:', JSON.stringify(updates, null, 2));
+      
       const { data, error } = await this.supabase
         .from(this.tableName)
         .update({
@@ -161,11 +193,14 @@ export class ItemsService extends BaseDatabase {
         .single();
 
       if (error) {
+        console.error('❌ [DATABASE] Supabase update error:', error);
         return { success: false, error: error.message };
       }
 
+      console.log('✅ [DATABASE] Update successful, returned data:', JSON.stringify(data, null, 2));
       return { success: true, data };
     } catch (error) {
+      console.error('❌ [DATABASE] Exception during update:', error);
       return { success: false, error: `Failed to update item: ${error}` };
     }
   }

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { User } from '../../types';
+import { UserWithPreferences, UserPreferences } from '../../types';
 import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
+import { UserSettingsModal } from '../common/UserSettingsModal';
+import { DEFAULT_REGION } from '../../constants/regions';
 import AdminDashboard from '../AdminDashboard';
 import './Dashboard.css';
 
@@ -9,10 +11,12 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserWithPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [updatingPreferences, setUpdatingPreferences] = useState(false);
 
   const loadUserData = useCallback(async () => {
     try {
@@ -23,7 +27,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       const userData = await window.electronAPI.getCurrentUser();
       
       if (userData) {
-        setUser(userData);
+        // Get or create user preferences
+        const preferencesResult = await window.electronAPI.userPreferences.getOrCreate(
+          userData.id,
+          { preferred_region: DEFAULT_REGION, display_regions: [DEFAULT_REGION] }
+        );
+        
+        if (preferencesResult.success) {
+          const userWithPreferences: UserWithPreferences = {
+            ...userData,
+            preferences: preferencesResult.data
+          };
+          setUser(userWithPreferences);
+        } else {
+          setUser(userData);
+        }
       } else {
         setError('No user data found');
       }
@@ -45,6 +63,38 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       onLogout();
     } catch (err) {
       console.error('Error logging out:', err);
+    }
+  };
+
+  const handleSaveSettings = async (preferences: Partial<UserPreferences>) => {
+    if (!user || updatingPreferences) return;
+    
+    try {
+      setUpdatingPreferences(true);
+      
+      // Update user preferences in database
+      const result = await window.electronAPI.userPreferences.update(
+        user.id,
+        preferences
+      );
+      
+      if (result.success) {
+        // Update local user state
+        setUser(prev => prev ? { 
+          ...prev, 
+          preferences: {
+            ...prev.preferences!,
+            ...preferences
+          }
+        } : null);
+        console.log('User preferences updated successfully');
+      } else {
+        console.error('Failed to update user preferences:', result.error);
+      }
+    } catch (err) {
+      console.error('Error updating user preferences:', err);
+    } finally {
+      setUpdatingPreferences(false);
     }
   };
 
@@ -133,6 +183,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </div>
           </div>
           <div className="header-actions">
+            <button 
+              onClick={() => setShowSettingsModal(true)}
+              className="settings-button"
+              title="User Settings"
+            >
+              ⚙️
+            </button>
             {isAdmin && (
               <button onClick={handleShowAdmin} className="admin-button">
                 Admin Panel
@@ -178,6 +235,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
         </div>
       </main>
+
+      {/* User Settings Modal */}
+      {user?.preferences && (
+        <UserSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          currentPreferences={user.preferences}
+          onSave={handleSaveSettings}
+          isLoading={updatingPreferences}
+        />
+      )}
     </div>
   );
 }

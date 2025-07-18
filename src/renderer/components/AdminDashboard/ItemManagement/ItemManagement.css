@@ -86,24 +86,40 @@
   .header-controls {
     justify-content: center;
     gap: 8px;
-    flex-wrap: wrap; /* Allow wrapping but keep button sizes */
+    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 buttons per row */
+    grid-gap: 8px;
+  }
+  
+  .header-controls .region-filter {
+    grid-column: 1 / -1; /* Full width for region selector */
+    margin-bottom: 8px;
   }
   
   .header-controls .btn {
-    min-width: 120px !important; /* Keep consistent minimum width */
-    height: 44px !important; /* Keep consistent height */
-    padding: 10px 20px !important;
+    min-width: 0 !important; /* Allow buttons to fill grid space */
+    width: 100% !important; /* Full width within grid cell */
+    height: 44px !important;
+    padding: 10px 12px !important;
     font-size: 14px !important;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
     text-align: center;
-    flex-shrink: 0 !important; /* Prevent shrinking */
+    box-sizing: border-box;
   }
-  
-  .region-filter .region-select {
-    min-width: 120px;
+}
+
+@media (max-width: 600px) {
+  .header-controls .btn {
+    font-size: 13px !important;
+    padding: 10px 8px !important;
   }
+}
+
+.region-filter .region-select {
+  min-width: 120px;
 }
 
 @media (max-width: 600px) {
@@ -660,6 +676,7 @@
 .region-th { background: rgba(26, 188, 156, 0.2); color: #1abc9c; border-color: #1abc9c; }
 .region-tw { background: rgba(142, 68, 173, 0.2); color: #8e44ad; border-color: #8e44ad; }
 .region-sa { background: rgba(211, 84, 0, 0.2); color: #d35400; border-color: #d35400; }
+.region-global { background: rgba(139, 69, 19, 0.2); color: #8b4513; border-color: #8b4513; }
 
 /* Creation Status Modal */
 .creation-status-modal {
@@ -1229,6 +1246,85 @@
   background: linear-gradient(135deg, #d97706, #b45309);
   box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
   transform: translateY(-1px);
+}
+
+/* Mobile responsiveness for confirmation modal */
+@media (max-width: 480px) {
+  .confirmation-modal {
+    width: 95vw;
+    max-width: none;
+  }
+  
+  .confirmation-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .confirmation-actions .btn {
+    min-width: 100%;
+  }
+}
+
+/* Form Divider */
+.form-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+  margin: 24px 0;
+  position: relative;
+}
+
+.form-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #5865f2, #7c3aed);
+  border-radius: 2px;
+}
+
+/* Modern Item Type Selector */
+.item-type-selector {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 48px !important;
+  cursor: pointer;
+  background-color: var(--button-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.item-type-selector:hover {
+  border-color: #5865f2;
+  background-color: var(--hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.15);
+}
+
+.item-type-selector:focus {
+  border-color: #5865f2;
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(88, 101, 242, 0.2);
+  transform: translateY(-1px);
+}
+
+.item-type-selector option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  padding: 12px 16px;
+  font-weight: 600;
+}
+
+.item-type-selector option:hover {
+  background: var(--hover-bg);
 }
 
 /* Mobile responsiveness for confirmation modal */
