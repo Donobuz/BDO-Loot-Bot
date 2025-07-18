@@ -84,7 +84,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             ...preferences
           }
         } : null);
-        // Removed unnecessary success log
       } else {
         console.error('Failed to update user preferences:', result.error);
       }

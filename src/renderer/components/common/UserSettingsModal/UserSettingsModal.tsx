@@ -30,20 +30,24 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
 
   const handleDisplayRegionToggle = (regionValue: string) => {
     if (regionValue === 'ALL') {
-      // Toggle ALL - if ALL is selected, deselect everything else, otherwise select ALL
-      if (displayRegions.includes('ALL')) {
-        setDisplayRegions([]);
-      } else {
+      if (!displayRegions.includes('ALL')) {
         setDisplayRegions(['ALL']);
       }
     } else {
       // Toggle individual region
       setDisplayRegions(prev => {
+        if (prev.includes('ALL')) {
+          return [regionValue];
+        }
+        
         const newRegions = prev.filter(r => r !== 'ALL'); // Remove ALL when selecting individual regions
         
         if (prev.includes(regionValue)) {
-          // Deselecting a region
-          return newRegions.filter(r => r !== regionValue);
+          const updatedRegions = newRegions.filter(r => r !== regionValue);
+          if (updatedRegions.length === 0) {
+            return prev;
+          }
+          return updatedRegions;
         } else {
           // Selecting a region
           const updatedRegions = [...newRegions, regionValue];
@@ -108,7 +112,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           <div className="settings-section">
             <h3>Default Region</h3>
             <p className="setting-description">
-              Your preferred region for loot tables and default data display
+              Region for grind sessions and accurate market pricing for loot.
             </p>
             
             <div className="dropdown-container">

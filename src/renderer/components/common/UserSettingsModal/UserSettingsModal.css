@@ -58,9 +58,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
+  padding: 0 0 24px 0 !important;
   border-bottom: 1px solid var(--modal-border, #40444b);
-  background: var(--modal-header-bg, #2f3136);
+  background: none !important;
   border-radius: 16px 16px 0 0;
 }
 
@@ -89,6 +89,22 @@
 
  .modern-checkbox input[type="checkbox"]:checked ~ .checkbox-text .checkbox-label::before {
   background: #43b581;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .close-button:hover {
@@ -125,7 +141,7 @@
 }
 
 .setting-description {
-  padding: 0;
+  padding: 0 0 4px 0;
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.5;
@@ -187,7 +203,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 4px;
 }
 
 .checkbox-item {
@@ -299,8 +315,6 @@
   background: #43b581;
 }
 
-/* Remove before bar and animation for stagnant text */
-
 .checkbox-sublabel {
   font-size: 13px;
   color: var(--text-secondary);
@@ -356,11 +370,11 @@
 .modal-footer {
   display: flex;
   gap: 16px;
-  padding: 24px;
+  padding: 24px 24px 0 24px;
   border-top: 1px solid var(--modal-border, #40444b);
-  justify-content: flex-end;
-  background: var(--modal-header-bg, #2f3136);
+  justify-content: stretch;
   border-radius: 0 0 16px 16px;
+  width: 100%;
 }
 
 .cancel-button {
@@ -373,6 +387,8 @@
   transition: all 0.2s ease;
   font-size: 14px;
   font-weight: 600;
+  flex: 1;
+  margin-top: 0 !important;
 }
 
 .cancel-button:hover {
@@ -397,6 +413,7 @@
   transition: all 0.2s ease;
   font-size: 14px;
   font-weight: 700;
+  flex: 1;
   box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
 }
 
@@ -422,8 +439,7 @@
   }
   
   .modal-header,
-  .modal-body,
-  .modal-footer {
+  .modal-body {
     padding: var(--spacing-md);
   }
   
@@ -435,6 +451,7 @@
   .cancel-button,
   .save-button {
     width: 100%;
+    min-width: unset;
   }
   
   .individual-regions {
