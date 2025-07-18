@@ -178,10 +178,6 @@ export class ItemsService extends BaseDatabase {
 
   async update(id: number, updates: Partial<Omit<Item, 'id' | 'created' | 'updated'>>): Promise<{ success: boolean; data?: Item; error?: string }> {
     try {
-      console.log('💾 [DATABASE] ItemsService.update called');
-      console.log('💾 [DATABASE] Item ID:', id);
-      console.log('💾 [DATABASE] Updates:', JSON.stringify(updates, null, 2));
-      
       const { data, error } = await this.supabase
         .from(this.tableName)
         .update({
@@ -193,14 +189,11 @@ export class ItemsService extends BaseDatabase {
         .single();
 
       if (error) {
-        console.error('❌ [DATABASE] Supabase update error:', error);
         return { success: false, error: error.message };
       }
 
-      console.log('✅ [DATABASE] Update successful, returned data:', JSON.stringify(data, null, 2));
       return { success: true, data };
     } catch (error) {
-      console.error('❌ [DATABASE] Exception during update:', error);
       return { success: false, error: `Failed to update item: ${error}` };
     }
   }

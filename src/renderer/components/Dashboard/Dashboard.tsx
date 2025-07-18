@@ -68,16 +68,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const handleSaveSettings = async (preferences: Partial<UserPreferences>) => {
     if (!user || updatingPreferences) return;
-    
     try {
       setUpdatingPreferences(true);
-      
       // Update user preferences in database
       const result = await window.electronAPI.userPreferences.update(
         user.id,
         preferences
       );
-      
       if (result.success) {
         // Update local user state
         setUser(prev => prev ? { 
@@ -87,7 +84,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             ...preferences
           }
         } : null);
-        console.log('User preferences updated successfully');
+        // Removed unnecessary success log
       } else {
         console.error('Failed to update user preferences:', result.error);
       }

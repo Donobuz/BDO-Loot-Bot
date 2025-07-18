@@ -11,10 +11,8 @@ export class AdminDatabase {
                               SUPABASE_CONFIG.serviceRoleKey !== 'your_supabase_service_role_key');
     
     if (this.isAdminAvailable) {
-      console.log('🔑 Creating admin client for elevated database operations');
       this.adminClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.serviceRoleKey);
     } else {
-      console.log('⚠️ Service role key not configured - admin operations will use regular client');
       this.adminClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
     }
   }
@@ -38,12 +36,6 @@ export class AdminDatabase {
    */
   async updateItemAsAdmin(id: number, updates: any): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      console.log('🔑 [ADMIN] Updating item with admin permissions');
-      console.log('🔑 [ADMIN] Item ID:', id);
-      console.log('🔑 [ADMIN] Updates:', JSON.stringify(updates, null, 2));
-      console.log('🔑 [ADMIN] Has admin permissions:', this.hasAdminPermissions());
-      
-      // First check if the item exists
       const { data: existingItem, error: getError } = await this.adminClient
         .from('items')
         .select('id, image_url')
@@ -54,8 +46,6 @@ export class AdminDatabase {
         console.error('❌ [ADMIN] Failed to fetch existing item:', getError);
         return { success: false, error: `Failed to fetch item: ${getError.message}` };
       }
-      
-      console.log('📋 [ADMIN] Existing item before update:', JSON.stringify(existingItem, null, 2));
       
       const { data, error } = await this.adminClient
         .from('items')
@@ -78,8 +68,6 @@ export class AdminDatabase {
         return { success: false, error: error.message };
       }
 
-      console.log('✅ [ADMIN] Admin update successful, returned data:', JSON.stringify(data, null, 2));
-      
       // Verify the update worked by fetching the item again
       const { data: verifyItem, error: verifyError } = await this.adminClient
         .from('items')

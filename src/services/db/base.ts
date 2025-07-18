@@ -10,8 +10,6 @@ export class BaseDatabase {
 
   async testConnection(): Promise<void> {
     try {
-      console.log('Connecting to Supabase...');
-      
       // Test basic connection with a simple health check
       const { count, error } = await this.supabase
         .from('users')
@@ -36,9 +34,7 @@ export class BaseDatabase {
       if (readError && readError.code !== 'PGRST116') {
         throw new Error(`Database read permission denied: ${readError.message}`);
       }
-
-      console.log('✅ Supabase connection established successfully');
-      console.log('📊 Current user count:', count);
+      // Connection successful, no need to log
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       throw error;
@@ -47,6 +43,6 @@ export class BaseDatabase {
 
   async close(): Promise<void> {
     // Supabase client doesn't need explicit closing
-    console.log('Supabase connection closed');
+    // No action needed
   }
 }
