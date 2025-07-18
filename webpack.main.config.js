@@ -34,6 +34,9 @@ module.exports = [
     plugins: [
       new webpack.DefinePlugin(envKeys)
     ],
+    externals: {
+      'sharp': 'commonjs sharp'
+    },
     node: {
       __dirname: false,
       __filename: false

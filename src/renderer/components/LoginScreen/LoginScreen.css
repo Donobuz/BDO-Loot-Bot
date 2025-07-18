@@ -90,6 +90,26 @@
   background: var(--discord-hover);
 }
 
+.cancel-button {
+  background: var(--button-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--button-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  margin-top: var(--spacing-md);
+  width: 100%;
+}
+
+.cancel-button:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+  color: var(--text-primary);
+}
+
 .error-message {
   background: var(--error-bg);
   border: 1px solid var(--error-border);

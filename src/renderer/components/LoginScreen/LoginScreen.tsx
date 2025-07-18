@@ -15,8 +15,6 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setError(null);
 
     try {
-      // For now, we'll simulate the auth process
-      // In a real implementation, this would call the main process
       const result = await window.electronAPI?.startDiscordAuth();
       
       if (result?.success) {
@@ -28,6 +26,17 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       setError('An unexpected error occurred');
       console.error('Login error:', err);
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelLogin = async () => {
+    try {
+      await window.electronAPI?.cancelDiscordAuth();
+      setIsLoading(false);
+      setError(null);
+    } catch (err) {
+      console.error('Error cancelling login:', err);
       setIsLoading(false);
     }
   };
@@ -63,6 +72,15 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             </>
           )}
         </button>
+        
+        {isLoading && (
+          <button 
+            onClick={handleCancelLogin}
+            className="cancel-button"
+          >
+            Cancel
+          </button>
+        )}
         
         <p className="app-name">BDO Loot Ledger v1.0</p>
       </div>

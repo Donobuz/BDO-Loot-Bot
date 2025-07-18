@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from '../../types';
 import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
+import { LocationManagement } from './LocationManagement';
+import { ItemManagement } from './ItemManagement';
 import '../../globals.css';
 import './AdminDashboard.css';
 
@@ -12,7 +14,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'manage-locations'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'manage-locations' | 'manage-items'>('dashboard');
 
   const loadAdminData = useCallback(async () => {
     try {
@@ -97,53 +99,93 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
       </header>
 
       <main className="admin-content">
-        <div className="welcome-section">
-          <h1>Admin Dashboard</h1>
-          <p>Manage users, system settings, and monitor application health.</p>
-        </div>
-        
-        <div className="admin-grid">
-          <div className="admin-card">
-            <h3>User Management</h3>
-            <p>Manage user permissions and access control</p>
-            <button className="admin-action-button">Manage Users</button>
-          </div>
+        {currentView === 'dashboard' && (
+          <>
+            <div className="welcome-section">
+              <h1>Admin Dashboard</h1>
+              <p>Manage users, system settings, and monitor application health.</p>
+            </div>
+            
+            <div className="admin-grid">
+              <div className="admin-card">
+                <h3>User Management</h3>
+                <p>Manage user permissions and access control</p>
+                <button className="admin-action-button">Manage Users</button>
+              </div>
 
-          <div className="admin-card">
-            <h3>System Settings</h3>
-            <p>Configure application settings and preferences</p>
-            <button className="admin-action-button">System Config</button>
-          </div>
+              <div className="admin-card">
+                <h3>System Settings</h3>
+                <p>Configure application settings and preferences</p>
+                <button className="admin-action-button">System Config</button>
+              </div>
 
-          <div className="admin-card">
-            <h3>Data Management</h3>
-            <p>Manage locations, items, and loot tables</p>
-            <button 
-              onClick={() => setCurrentView('manage-locations')}
-              className="admin-action-button"
-            >
-              Manage Locations
-            </button>
-          </div>
+              <div className="admin-card">
+                <h3>Data Management</h3>
+                <p>Manage locations, items, and loot tables</p>
+                <div className="admin-card-buttons">
+                  <button 
+                    onClick={() => setCurrentView('manage-locations')}
+                    className="admin-action-button"
+                  >
+                    Manage Locations
+                  </button>
+                  <button 
+                    onClick={() => setCurrentView('manage-items')}
+                    className="admin-action-button"
+                  >
+                    Manage Items
+                  </button>
+                </div>
+              </div>
 
-          <div className="admin-card">
-            <h3>Analytics</h3>
-            <p>View system usage statistics and reports</p>
-            <button className="admin-action-button">View Analytics</button>
-          </div>
+              <div className="admin-card">
+                <h3>Analytics</h3>
+                <p>View system usage statistics and reports</p>
+                <button className="admin-action-button">View Analytics</button>
+              </div>
 
-          <div className="admin-card">
-            <h3>Logs & Monitoring</h3>
-            <p>Monitor system health and view logs</p>
-            <button className="admin-action-button">View Logs</button>
-          </div>
+              <div className="admin-card">
+                <h3>Logs & Monitoring</h3>
+                <p>Monitor system health and view logs</p>
+                <button className="admin-action-button">View Logs</button>
+              </div>
 
-          <div className="admin-card">
-            <h3>Backup & Maintenance</h3>
-            <p>Database backups and system maintenance</p>
-            <button className="admin-action-button">Maintenance</button>
+              <div className="admin-card">
+                <h3>Backup & Maintenance</h3>
+                <p>Database backups and system maintenance</p>
+                <button className="admin-action-button">Maintenance</button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {currentView === 'manage-locations' && (
+          <div className="admin-section">
+            <div className="section-header">
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="back-section-button"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <LocationManagement />
           </div>
-        </div>
+        )}
+
+        {currentView === 'manage-items' && (
+          <div className="admin-section">
+            <div className="section-header">
+              <button 
+                onClick={() => setCurrentView('dashboard')}
+                className="back-section-button"
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+            <ItemManagement />
+          </div>
+        )}
       </main>
     </div>
   );

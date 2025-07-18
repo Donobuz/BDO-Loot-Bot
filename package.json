@@ -5,7 +5,7 @@
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "concurrently \"npm:watch-renderer\" \"npm:watch-main\" \"wait-on dist/renderer/bundle.js dist/main/main.js && electron .\"",
-    "start": "npm run dev",
+    "start": "npm run build && npm run dev",
     "watch-renderer": "webpack --watch",
     "watch-main": "webpack --config webpack.main.config.js --watch",
     "build-renderer": "webpack",
@@ -24,19 +24,26 @@
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.50.5",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.10.0",
+    "bufferutil": "^4.0.9",
     "dotenv": "^17.2.0",
     "electron-store": "^10.1.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "sharp": "^0.34.3",
+    "utf-8-validate": "^6.0.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.13",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@types/sharp": "^0.31.1",
     "concurrently": "^9.2.0",
     "css-loader": "^7.1.2",
     "electron": "^37.2.1",
+    "electron-rebuild": "^3.2.9",
     "html-webpack-plugin": "^5.6.3",
     "rimraf": "^6.0.1",
     "style-loader": "^4.0.0",

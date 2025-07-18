@@ -2,6 +2,9 @@
 export { BaseDatabase } from './base';
 export { usersService, UsersService } from './users';
 export { aclsService, AclsService } from './acls';
+export { locationService, LocationService } from './locations';
+export { itemsService, ItemsService } from './items';
+export { StorageService } from './storage';
 
 // Type exports
 export * from './types';
@@ -10,15 +13,21 @@ export * from './types';
 import { BaseDatabase } from './base';
 import { UsersService } from './users';
 import { AclsService } from './acls';
+import { LocationService } from './locations';
+import { ItemsService } from './items';
 
 export class DatabaseService extends BaseDatabase {
   public users: UsersService;
   public acls: AclsService;
+  public locations: LocationService;
+  public items: ItemsService;
 
   constructor() {
     super();
     this.users = new UsersService();
     this.acls = new AclsService();
+    this.locations = new LocationService();
+    this.items = new ItemsService();
   }
 
   // Health check method that tests all service connections

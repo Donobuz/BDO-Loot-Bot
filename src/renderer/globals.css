@@ -78,6 +78,37 @@ body {
   overflow-x: hidden;
 }
 
+/* Hide vertical scrollbars globally while keeping functionality */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+::-webkit-scrollbar:horizontal {
+  height: 8px;
+  background: var(--button-bg);
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  background: var(--button-border);
+  border-radius: var(--border-radius);
+}
+
+::-webkit-scrollbar-thumb:horizontal:hover {
+  background: var(--button-hover-border);
+}
+
+/* Firefox */
+html {
+  scrollbar-width: none; /* Hide scrollbar */
+}
+
+/* For specific elements that need horizontal scrolling */
+.locations-table-container {
+  scrollbar-width: thin; /* Show thin scrollbar for horizontal */
+}
+
 /* ============================================
    COMMON LAYOUT COMPONENTS
    ============================================ */
@@ -116,7 +147,8 @@ body {
    ============================================ */
 
 /* Base Button */
-.button {
+.button,
+.btn {
   background: var(--button-bg);
   border: 1px solid var(--button-border);
   color: var(--text-primary);
@@ -132,38 +164,99 @@ body {
   gap: 0.5rem;
   font-family: inherit;
   font-size: var(--font-size-base);
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.button:hover {
+.button:hover,
+.btn:hover {
   background: var(--button-hover-bg);
   border-color: var(--button-hover-border);
   transform: translateY(-1px);
 }
 
 /* Button Variants */
-.button-primary {
+.button-primary,
+.btn-primary {
   background: var(--discord-primary);
   border: none;
   box-shadow: var(--discord-shadow);
 }
 
-.button-primary:hover {
+.button-primary:hover,
+.btn-primary:hover {
   background: var(--discord-hover);
   box-shadow: var(--discord-shadow-hover);
 }
 
-.button-sm {
+.button-secondary,
+.btn-secondary {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-secondary);
+}
+
+.button-secondary:hover,
+.btn-secondary:hover {
+  background: var(--button-hover-bg);
+  border-color: var(--button-hover-border);
+  color: var(--text-primary);
+}
+
+.button-success,
+.btn-success {
+  background: var(--success-color);
+  border: none;
+  color: white;
+}
+
+.button-success:hover,
+.btn-success:hover {
+  background: #27ae60;
+  transform: translateY(-1px);
+}
+
+.button-warning,
+.btn-warning {
+  background: var(--warning-color);
+  border: none;
+  color: white;
+}
+
+.button-warning:hover,
+.btn-warning:hover {
+  background: #e67e22;
+  transform: translateY(-1px);
+}
+
+.button-danger,
+.btn-danger {
+  background: var(--error-color);
+  border: none;
+  color: white;
+}
+
+.button-danger:hover,
+.btn-danger:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.button-sm,
+.btn-small {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
 }
 
-.button-lg {
+.button-lg,
+.btn-large {
   padding: var(--spacing-md) var(--spacing-xl);
   font-size: var(--font-size-lg);
   font-weight: 600;
 }
 
-.button:disabled {
+.button:disabled,
+.btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;

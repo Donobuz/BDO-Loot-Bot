@@ -51,6 +51,15 @@ class AuthService {
 
   async startAuthFlow(): Promise<AuthResult> {
     return new Promise((resolve) => {
+      let resolved = false; // Flag to prevent multiple resolutions
+
+      const resolveOnce = (result: AuthResult) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      };
+
       // Generate auth URL and open in browser
       const authURL = this.generateAuthURL();
       shell.openExternal(authURL);
@@ -93,7 +102,7 @@ class AuthService {
             res.writeHead(400, { 'Content-Type': 'text/html' });
             res.end(htmlMessage);
             this.authServer.close();
-            resolve({ success: false, error: userFriendlyError });
+            resolveOnce({ success: false, error: userFriendlyError });
             return;
           }
 
@@ -103,28 +112,36 @@ class AuthService {
               res.writeHead(200, { 'Content-Type': 'text/html' });
               res.end(this.htmlTemplateService.getAuthSuccessHtml());
               this.authServer.close();
-              resolve(result);
+              resolveOnce(result);
             } catch (err) {
               res.writeHead(500, { 'Content-Type': 'text/html' });
               res.end(this.htmlTemplateService.getAuthErrorHtml('Token exchange failed'));
               this.authServer.close();
-              resolve({ success: false, error: 'Token exchange failed' });
+              resolveOnce({ success: false, error: 'Token exchange failed' });
             }
           }
         }
       });
 
       this.authServer.listen(3000, () => {
-        console.log('Auth server listening on port 3000');
+        // Auth server started
       });
 
-      // Timeout after 5 minutes
-      setTimeout(() => {
-        if (this.authServer.listening) {
+      // Shorter timeout - 2 minutes instead of 5
+      const timeout = setTimeout(() => {
+        if (this.authServer && this.authServer.listening) {
           this.authServer.close();
-          resolve({ success: false, error: 'Authentication timeout' });
+          resolveOnce({ 
+            success: false, 
+            error: 'Authentication timeout. Please try again.' 
+          });
         }
-      }, 300000);
+      }, 120000); // 2 minutes
+
+      // Clean up timeout if auth completes successfully
+      this.authServer.on('close', () => {
+        clearTimeout(timeout);
+      });
     });
   }
 
@@ -213,6 +230,12 @@ class AuthService {
 
   logout(): void {
     (this.store as any).delete(this.AUTH_KEY);
+  }
+
+  cancelAuthFlow(): void {
+    if (this.authServer && this.authServer.listening) {
+      this.authServer.close();
+    }
   }
 
   getAccessToken(): string | null {

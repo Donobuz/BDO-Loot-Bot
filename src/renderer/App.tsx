@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import Dashboard from './components/Dashboard';
+import { ModalProvider, useModal } from './contexts/ModalContext';
+import { ModalRenderer } from './components/Modal/Modal';
 import './types'; // Import global types
 import './globals.css';
 import './App.css';
 
-export default function App() {
+const AppContent: React.FC = () => {
+  const { modals } = useModal();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +19,7 @@ export default function App() {
   const checkAuthStatus = async () => {
     try {
       const authData = await window.electronAPI.checkAuthStatus();
-      setIsLoggedIn(authData.isAuthenticated);
+      setIsLoggedIn(authData.isLoggedIn);
     } catch (error) {
       console.error('Error checking auth status:', error);
       setIsLoggedIn(false);
@@ -45,8 +48,26 @@ export default function App() {
   }
 
   if (!isLoggedIn) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <>
+        <LoginScreen onLoginSuccess={handleLoginSuccess} />
+        <ModalRenderer modals={modals} />
+      </>
+    );
   }
 
-  return <Dashboard onLogout={handleLogout} />;
+  return (
+    <>
+      <Dashboard onLogout={handleLogout} />
+      <ModalRenderer modals={modals} />
+    </>
+  );
+};
+
+export default function App() {
+  return (
+    <ModalProvider>
+      <AppContent />
+    </ModalProvider>
+  );
 }

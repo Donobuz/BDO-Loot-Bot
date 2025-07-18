@@ -3,9 +3,37 @@ declare global {
   interface Window {
     electronAPI: {
       startDiscordAuth: () => Promise<{ success: boolean; user?: any; error?: string }>;
-      checkAuthStatus: () => Promise<{ isAuthenticated: boolean; user?: any }>;
+      cancelDiscordAuth: () => Promise<{ success: boolean; error?: string }>;
+      checkAuthStatus: () => Promise<{ isLoggedIn: boolean; user?: any }>;
       logout: () => Promise<void>;
       getCurrentUser: () => Promise<User | null>;
+      locations: {
+        getActive: () => Promise<{ success: boolean; data?: Location[]; error?: string }>;
+        getArchived: () => Promise<{ success: boolean; data?: Location[]; error?: string }>;
+        getAll: () => Promise<{ success: boolean; data?: Location[]; error?: string }>;
+        getById: (id: number) => Promise<{ success: boolean; data?: Location; error?: string }>;
+        create: (location: Omit<Location, 'id' | 'created' | 'updated'>) => Promise<{ success: boolean; data?: Location; error?: string; skipped?: boolean; unarchived?: boolean; message?: string }>;
+        update: (id: number, updates: Partial<Omit<Location, 'id' | 'created' | 'updated'>>) => Promise<{ success: boolean; data?: Location; error?: string }>;
+        archive: (id: number) => Promise<{ success: boolean; data?: Location; error?: string }>;
+        unarchive: (id: number) => Promise<{ success: boolean; data?: Location; error?: string }>;
+        search: (term: string) => Promise<{ success: boolean; data?: Location[]; error?: string }>;
+      };
+      items: {
+        getActive: () => Promise<{ success: boolean; data?: Item[]; error?: string }>;
+        getArchived: () => Promise<{ success: boolean; data?: Item[]; error?: string }>;
+        getAll: () => Promise<{ success: boolean; data?: Item[]; error?: string }>;
+        getById: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        create: (item: Omit<Item, 'id' | 'created' | 'updated'>) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        createFromAPI: (bdoItemId: number, region: string) => Promise<{ success: boolean; data?: Item; error?: string; skipped?: boolean; unarchived?: boolean; message?: string }>;
+        update: (id: number, updates: Partial<Omit<Item, 'id' | 'created' | 'updated'>>) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        archive: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        unarchive: (id: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        syncPrices: (region: string) => Promise<{ success: boolean; updated?: number; error?: string }>;
+        uploadImage: (itemId: number, imageBuffer: Uint8Array, originalName: string) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        removeImage: (itemId: number) => Promise<{ success: boolean; data?: Item; error?: string }>;
+        uploadImageForBdoItem: (bdoItemId: number, imageBuffer: Uint8Array, originalName: string) => Promise<{ success: boolean; data?: { imageUrl: string; fileName: string; updatedItems: number }; error?: string }>;
+        getByBdoItemId: (bdoItemId: number) => Promise<{ success: boolean; data?: Item[]; error?: string }>;
+      };
     };
   }
 }
@@ -24,23 +52,27 @@ export interface User {
 export interface Location {
   id: number;
   name: string;
-  region: string;
-  description?: string;
-  recommended_ap?: number;
-  recommended_dp?: number;
+  ap: number;
+  total_ap: number;
+  dp: number;
+  monster_type: string;
   created: string;
   updated: string;
+  archived?: string | null;
 }
 
 export interface Item {
   id: number;
   name: string;
-  category: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-  market_value?: number;
-  icon_url?: string;
+  bdo_item_id: number;
+  base_price: number;
+  last_sold_price: number;
+  loot_table_ids: number[];
+  region: string;
+  image_url?: string;
   created: string;
   updated: string;
+  archived?: string | null;
 }
 
 export interface GrindSession {

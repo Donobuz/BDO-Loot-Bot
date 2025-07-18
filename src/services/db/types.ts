@@ -21,13 +21,27 @@ export interface UserAcl {
 export interface Location {
   id: number;
   name: string;
-  region: string;
-  description?: string;
-  recommended_ap?: number;
-  recommended_dp?: number;
-  monster_type?: string;
+  ap: number;
+  total_ap: number;
+  dp: number;
+  monster_type: string;
   created: string;
   updated: string;
+  archived?: string;
+}
+
+export interface Item {
+  id: number;
+  name: string;
+  bdo_item_id: number;
+  base_price: number;
+  last_sold_price: number;
+  loot_table_ids: number[];
+  region: string;
+  image_url?: string;
+  created: string;
+  updated: string;
+  archived?: string | null;
 }
 
 // === DISCORD TYPES ===

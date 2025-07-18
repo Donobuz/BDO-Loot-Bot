@@ -1,15 +1,26 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { authService } from '../services/auth';
 import { databaseService } from '../services/db';
+import { setupLocationHandlers } from './locationAPI';
+import { itemHandlers } from './itemAPI';
+import { StorageService } from '../services/db/storage';
+
+// Global storage service instance
+let storageService: StorageService;
 
 async function createWindow() {
   // Initialize database
   try {
     await databaseService.testConnection();
     console.log('Database initialized');
+    
+    // Initialize storage bucket
+    storageService = new StorageService();
+    await storageService.initializeBucket();
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('Failed to initialize database or storage:', error);
   }
 
   const win = new BrowserWindow({
@@ -33,17 +44,22 @@ async function createWindow() {
 // Set up IPC handlers
 ipcMain.handle('start-discord-auth', async () => {
   try {
-    console.log('Starting Discord authentication...');
-    console.log('Discord Client ID:', process.env.DISCORD_CLIENT_ID);
-    console.log('Supabase URL:', process.env.SUPABASE_URL);
-    
     const result = await authService.startAuthFlow();
-    console.log('Auth result:', result);
     return result;
   } catch (error) {
     console.error('Auth error details:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return { success: false, error: `Authentication failed: ${errorMessage}` };
+  }
+});
+
+ipcMain.handle('cancel-discord-auth', async () => {
+  try {
+    authService.cancelAuthFlow();
+    return { success: true };
+  } catch (error) {
+    console.error('Error cancelling auth:', error);
+    return { success: false, error: 'Failed to cancel authentication' };
   }
 });
 
@@ -61,6 +77,14 @@ ipcMain.handle('logout', async () => {
 
 ipcMain.handle('get-current-user', async () => {
   return authService.getCurrentUserWithPermissions();
+});
+
+// Setup location handlers
+setupLocationHandlers();
+
+// Setup item handlers
+Object.entries(itemHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
 });
 
 app.whenReady().then(() => {
