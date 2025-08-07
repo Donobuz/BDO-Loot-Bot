@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import './LocationManagement.css';
+import './LocationManagementTable.css';
 import { Location } from '../../../types';
+import { useModal } from '../../../contexts/ModalContext';
 
 const MONSTER_TYPES = ['Kamasylvian', 'Demi-Human', 'Human'];
 
 const LocationManagement: React.FC = () => {
+  const { showModal, hideModal } = useModal();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<keyof Location>('name');
@@ -41,16 +43,27 @@ const LocationManagement: React.FC = () => {
     }
   };
 
+  // Helper function to show error modals
+  const showErrorModal = (title: string, message: string) => {
+    showModal({
+      id: `error-${Date.now()}`,
+      type: 'status',
+      title,
+      content: <p style={{ color: '#cdd6f4', marginBottom: '0' }}>{message}</p>,
+      onClose: () => { }
+    });
+  };
+
   // Filter and sort locations based on search query, archive status, and sorting
   const filteredLocations = useMemo(() => {
-    let filtered = locations.filter(location => 
+    let filtered = locations.filter(location =>
       showArchived ? location.archived : !location.archived
     );
 
     // Search only by name
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(location => 
+      filtered = filtered.filter(location =>
         location.name.toLowerCase().includes(query)
       );
     }
@@ -85,9 +98,9 @@ const LocationManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
-      alert('Please enter a location name');
+      showErrorModal('Validation Error', 'Please enter a location name');
       return;
     }
 
@@ -111,11 +124,11 @@ const LocationManagement: React.FC = () => {
         await loadLocations();
         handleCloseModal();
       } else {
-        alert(`Failed to ${editingLocation ? 'update' : 'create'} location: ${result.error}`);
+        showErrorModal('Operation Failed', `Failed to ${editingLocation ? 'update' : 'create'} location: ${result.error}`);
       }
     } catch (error) {
       console.error('Error saving location:', error);
-      alert('An error occurred while saving the location');
+      showErrorModal('Error', 'An error occurred while saving the location');
     }
   };
 
@@ -128,11 +141,11 @@ const LocationManagement: React.FC = () => {
       dp: location.dp.toString(),
       monster_type: location.monster_type
     });
-    setShowModal(true);
+    setShowLocationModal(true);
   };
 
   const handleCloseModal = () => {
-    setShowModal(false);
+    setShowLocationModal(false);
     setEditingLocation(null);
     setFormData({
       name: '',
@@ -144,36 +157,57 @@ const LocationManagement: React.FC = () => {
   };
 
   const handleOpenModal = () => {
-    setShowModal(true);
+    setShowLocationModal(true);
   };
 
   const handleArchive = async (location: Location) => {
-    if (window.confirm(`Are you sure you want to archive "${location.name}"?`)) {
+    const confirmArchive = async () => {
       try {
-        const result = await window.electronAPI.locations.archive(location.id);
-        if (result.success) {
-          await loadLocations();
-        } else {
-          alert(`Failed to archive location: ${result.error}`);
+        // Archive the location
+        const locationResult = await window.electronAPI.locations.archive(location.id);
+        if (!locationResult.success) {
+          showErrorModal('Archive Failed', `Failed to archive location: ${locationResult.error}`);
+          return;
         }
+
+        await loadLocations();
       } catch (error) {
         console.error('Error archiving location:', error);
-        alert('An error occurred while archiving the location');
+        showErrorModal('Error', 'An error occurred while archiving the location');
       }
-    }
+    };
+
+    // Show confirmation modal
+    const modalId = `archive-location-${location.id}`;
+    showModal({
+      id: modalId,
+      type: 'confirmation',
+      title: 'Archive Location',
+      message: `Are you sure you want to archive "${location.name}"? This will hide it from the loot table management.`,
+      confirmText: 'Archive',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      onConfirm: async () => {
+        hideModal(modalId);
+        await confirmArchive();
+      },
+      onClose: () => hideModal(modalId)
+    });
   };
 
   const handleRestore = async (id: number) => {
     try {
-      const result = await window.electronAPI.locations.unarchive(id);
-      if (result.success) {
-        await loadLocations();
-      } else {
-        alert('Failed to restore location: ' + result.error);
+      // Restore the location
+      const locationResult = await window.electronAPI.locations.unarchive(id);
+      if (!locationResult.success) {
+        showErrorModal('Restore Failed', 'Failed to restore location: ' + locationResult.error);
+        return;
       }
+
+      await loadLocations();
     } catch (error) {
       console.error('Error restoring location:', error);
-      alert('An error occurred while restoring the location');
+      showErrorModal('Error', 'An error occurred while restoring the location');
     }
   };
 
@@ -201,7 +235,7 @@ const LocationManagement: React.FC = () => {
       <div className="location-management-header">
         <h2>Locations</h2>
         <div className="header-controls">
-          <button 
+          <button
             className={`btn ${showArchived ? 'btn-warning' : 'btn-secondary'}`}
             onClick={() => setShowArchived(!showArchived)}
           >
@@ -232,11 +266,11 @@ const LocationManagement: React.FC = () => {
         <div className="loading">Loading locations...</div>
       ) : filteredLocations.length === 0 ? (
         <div className="no-locations">
-          {searchQuery ? 'No locations match your search criteria' : 'No locations found. Create your first location!'}
+          {searchQuery ? 'No locations match your search criteria' : '-'}
         </div>
       ) : (
-        <div className="locations-table-container">
-          <table className="locations-table">
+        <div className="main-locations-table-container">
+          <table className="main-locations-table">
             <thead>
               <tr>
                 <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
@@ -266,7 +300,7 @@ const LocationManagement: React.FC = () => {
                   <td>{location.total_ap}</td>
                   <td>{location.dp}</td>
                   <td>
-                    <div className="actions">
+                    <div className="main-table-actions">
                       {location.archived ? (
                         <button
                           className="btn btn-small btn-success"
@@ -300,7 +334,7 @@ const LocationManagement: React.FC = () => {
       )}
 
       {/* Modal */}
-      {showModal && (
+      {showLocationModal && (
         <div className="location-form-modal" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -309,7 +343,7 @@ const LocationManagement: React.FC = () => {
                 ✕
               </button>
             </div>
-            
+
             <form className="location-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="name">Location Name:</label>

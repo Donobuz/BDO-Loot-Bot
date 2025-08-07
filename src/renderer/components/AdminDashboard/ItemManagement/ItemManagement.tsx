@@ -635,9 +635,10 @@ const ItemManagement: React.FC = () => {
   };
 
   const handleArchive = async (item: Item) => {
+    const message = item.region ? `Are you sure you want to archive "${item.name}" from the ${item.region} region?` : `Are you sure you want to archive "${item.name}"?`;
     const confirmed = await showConfirmationModal({
       title: 'Archive Item',
-      message: `Are you sure you want to archive "${item.name}" from the ${item.region} region?`,
+      message,
       confirmText: 'Archive',
       onConfirm: () => {}, // Will be handled by the promise resolution
       isDestructive: true

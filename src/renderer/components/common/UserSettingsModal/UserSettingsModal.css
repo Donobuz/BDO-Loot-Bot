@@ -54,7 +54,7 @@
   }
 }
 
-.modal-header {
+.user-settings-modal .user-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -64,7 +64,7 @@
   border-radius: 16px 16px 0 0;
 }
 
-.modal-header h2 {
+.user-settings-modal .user-modal-header h2 {
   margin: 0;
   color: var(--text-primary);
   font-size: 15px;
@@ -121,7 +121,7 @@
 }
 
 .settings-section {
-  margin-bottom: 32px;
+  margin: 10px 0 32px 0;
 }
 
 .settings-section:last-child {
@@ -438,12 +438,12 @@
     max-height: 85vh;
   }
   
-  .modal-header,
-  .modal-body {
+  .user-settings-modal .user-modal-header,
+  .user-settings-modal .user-modal-body {
     padding: var(--spacing-md);
   }
   
-  .modal-footer {
+  .user-modal-footer {
     flex-direction: column;
     gap: var(--spacing-sm);
   }

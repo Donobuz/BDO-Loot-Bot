@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LootTable, Location, Item } from '../../../types';
+import LocationSelector from './LocationSelector';
 import './LootTableManagement.css';
 
 interface LootTableManagementProps {}
@@ -12,20 +13,20 @@ export default function LootTableManagement({}: LootTableManagementProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [selectedLootTable, setSelectedLootTable] = useState<LootTable | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [stagedItems, setStagedItems] = useState<Item[]>([]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load locations, loot tables, and items
+      // Load active locations, loot tables, and items
       const [locationsResult, lootTablesResult, itemsResult] = await Promise.all([
         window.electronAPI.locations.getActive(),
-        window.electronAPI.lootTables.getActive(),
+        window.electronAPI.lootTables.getAll(),
         window.electronAPI.items.getActive()
       ]);
 
@@ -65,49 +66,43 @@ export default function LootTableManagement({}: LootTableManagementProps) {
     }
   };
 
-  const createLootTable = async (locationId: number) => {
-    try {
-      setIsCreating(true);
-      const result = await window.electronAPI.lootTables.create({
-        location_id: locationId,
-        item_ids: [],
-        archived: null
-      });
+  const addItemToLootTable = async () => {
+    if (!selectedLootTable || stagedItems.length === 0) return;
 
-      if (result.success) {
-        setSelectedLootTable(result.data!);
-        setLootTables(prev => [...prev, result.data!]);
-        setIsCreating(false);
-      } else {
-        setError(result.error || 'Failed to create loot table');
+    try {
+      // Add all staged items to the loot table
+      for (const item of stagedItems) {
+        const result = await window.electronAPI.lootTables.addItem(selectedLootTable.id, item.id);
+        if (result.success) {
+          setSelectedLootTable(result.data!);
+          setLootTables(prev => 
+            prev.map(lt => lt.id === selectedLootTable.id ? result.data! : lt)
+          );
+        } else {
+          setError(result.error || `Failed to add item: ${item.name}`);
+          return; // Stop on first error
+        }
       }
+
+      // Close modal and reset state
+      setShowAddItemModal(false);
+      setStagedItems([]);
+      setSelectedItemId(null);
     } catch (err) {
-      console.error('Error creating loot table:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create loot table');
-    } finally {
-      setIsCreating(false);
+      console.error('Error adding items to loot table:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add items to loot table');
     }
   };
 
-  const addItemToLootTable = async () => {
-    if (!selectedLootTable || !selectedItemId) return;
-
-    try {
-      const result = await window.electronAPI.lootTables.addItem(selectedLootTable.id, selectedItemId);
-      if (result.success) {
-        setSelectedLootTable(result.data!);
-        setLootTables(prev => 
-          prev.map(lt => lt.id === selectedLootTable.id ? result.data! : lt)
-        );
-        setShowAddItemModal(false);
-        setSelectedItemId(null);
-      } else {
-        setError(result.error || 'Failed to add item to loot table');
-      }
-    } catch (err) {
-      console.error('Error adding item to loot table:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add item to loot table');
+  const addItemToStaging = (itemId: number) => {
+    const item = availableItems.find(item => item.id === itemId);
+    if (item && !stagedItems.find(staged => staged.bdo_item_id === item.bdo_item_id)) {
+      setStagedItems(prev => [...prev, item]);
     }
+  };
+
+  const removeItemFromStaging = (bdoItemId: number) => {
+    setStagedItems(prev => prev.filter(item => item.bdo_item_id !== bdoItemId));
   };
 
   const removeItemFromLootTable = async (itemId: number) => {
@@ -154,12 +149,26 @@ export default function LootTableManagement({}: LootTableManagementProps) {
     loadData();
   }, []);
 
+  // Filter out items that are already in the current loot table and deduplicate by bdo_item_id
+  const filteredAvailableItems = availableItems
+    .filter(item => {
+      if (!selectedLootTable) return true;
+      // Check if any item in the loot table has the same bdo_item_id
+      const lootTableItems = selectedLootTable.item_ids.map(id => getItemById(id)).filter(Boolean) as Item[];
+      return !lootTableItems.some(lootItem => lootItem.bdo_item_id === item.bdo_item_id);
+    })
+    .filter((item, index, array) => {
+      // Deduplicate by bdo_item_id - keep only the first occurrence
+      return array.findIndex(i => i.bdo_item_id === item.bdo_item_id) === index;
+    });
+
   if (loading) {
     return (
       <div className="loot-table-management">
-        <div className="loading">
+        <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading loot table data...</p>
+          <h3>Loading Loot Table Management</h3>
+          <p>Fetching locations, items, and loot tables...</p>
         </div>
       </div>
     );
@@ -168,11 +177,12 @@ export default function LootTableManagement({}: LootTableManagementProps) {
   if (error) {
     return (
       <div className="loot-table-management">
-        <div className="error">
-          <h2>Error</h2>
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <h3>Error Loading Data</h3>
           <p>{error}</p>
           <button onClick={loadData} className="retry-button">
-            Retry
+            Try Again
           </button>
         </div>
       </div>
@@ -181,158 +191,182 @@ export default function LootTableManagement({}: LootTableManagementProps) {
 
   return (
     <div className="loot-table-management">
+      {error && (
+        <div className="error-message">
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+
       <div className="header">
         <h2>Loot Table Management</h2>
         <p>Manage loot tables for each location</p>
       </div>
 
-      <div className="loot-table-content">
-        <div className="location-selector">
-          <h3>Select Location</h3>
-          <div className="location-list">
-            {locations.map(location => (
-              <div 
-                key={location.id}
-                className={`location-item ${selectedLocationId === location.id ? 'selected' : ''}`}
-                onClick={() => handleLocationSelect(location.id)}
-              >
-                <div className="location-info">
-                  <h4>{location.name}</h4>
-                  <p>AP: {location.ap} | DP: {location.dp}</p>
-                  <p>Monster: {location.monster_type}</p>
-                </div>
-                <div className="location-status">
-                  {lootTables.some(lt => lt.location_id === location.id) ? (
-                    <span className="has-loot-table">Has Loot Table</span>
-                  ) : (
-                    <span className="no-loot-table">No Loot Table</span>
-                  )}
-                </div>
-              </div>
-            ))}
+      {/* Location Selector */}
+      <div className="location-selector-section">
+        <LocationSelector
+          locations={locations}
+          selectedLocationId={selectedLocationId}
+          onLocationSelect={handleLocationSelect}
+          lootTables={lootTables}
+          onLocationUpdate={loadData}
+        />
+      </div>
+
+      {/* Loot Table Content */}
+      {selectedLocationId && (
+        <div className="loot-table-section">
+          <div className="loot-table-header">
+            <div className="header-info">
+              <h3>{getLocationById(selectedLocationId)?.name} - Loot Table</h3>
+              <p>{getLocationById(selectedLocationId)?.monster_type}</p>
+            </div>
+            <div className="header-actions">
+              {selectedLootTable && (
+                <button 
+                  onClick={openAddItemModal}
+                  className="add-item-btn"
+                >
+                  + Add Item
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="loot-table-editor">
-          {selectedLocationId ? (
-            <div className="loot-table-content">
-              <div className="loot-table-header">
-                <h3>Loot Table for {getLocationById(selectedLocationId)?.name}</h3>
-                {!selectedLootTable && (
-                  <button 
-                    onClick={() => createLootTable(selectedLocationId)}
-                    className="create-loot-table-btn"
-                    disabled={isCreating}
-                  >
-                    {isCreating ? 'Creating...' : 'Create Loot Table'}
-                  </button>
-                )}
+          {selectedLootTable ? (
+            <div className="loot-table-items">
+              <div className="items-header">
+                <h4>Items in this loot table ({selectedLootTable.item_ids.length})</h4>
               </div>
-
-              {selectedLootTable ? (
-                <div className="loot-table-items">
-                  <div className="items-header">
-                    <h4>Items in Loot Table ({selectedLootTable.item_ids.length})</h4>
-                    <button 
-                      onClick={openAddItemModal}
-                      className="add-item-btn"
-                    >
-                      + Add Item
-                    </button>
-                  </div>
-
-                  <div className="items-list">
-                    {selectedLootTable.item_ids.length === 0 ? (
-                      <p className="no-items">No items in this loot table yet. Click "Add Item" to get started.</p>
-                    ) : (
-                      selectedLootTable.item_ids.map(itemId => {
-                        const item = getItemById(itemId);
-                        return item ? (
-                          <div key={itemId} className="loot-table-item">
-                            <div className="item-info">
-                              {item.image_url && (
-                                <img 
-                                  src={item.image_url} 
-                                  alt={item.name}
-                                  className="item-image"
-                                />
-                              )}
-                              <div className="item-details">
-                                <h5>{item.name}</h5>
-                                <p>BDO ID: {item.bdo_item_id}</p>
-                                <p>Type: {item.type}</p>
-                                {item.region && <p>Region: {item.region}</p>}
-                              </div>
-                            </div>
-                            <button 
-                              onClick={() => removeItemFromLootTable(itemId)}
-                              className="remove-item-btn"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ) : null;
-                      })
-                    )}
-                  </div>
+              
+              {selectedLootTable.item_ids.length === 0 ? (
+                <div className="no-items">
+                  <p>No items in this loot table yet.</p>
+                  <p>Click "Add Item" to get started.</p>
                 </div>
               ) : (
-                <p className="no-loot-table-message">
-                  This location doesn't have a loot table yet. Create one to start adding items.
-                </p>
+                <div className="items-list">
+                  {selectedLootTable.item_ids.map(itemId => {
+                    const item = getItemById(itemId);
+                    return item ? (
+                      <div key={itemId} className="loot-table-item">
+                        <div className="item-info">
+                          {item.image_url && (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name}
+                              className="item-image"
+                            />
+                          )}
+                          <div className="item-details">
+                            <h5>{item.name}</h5>
+                            <p>BDO ID: {item.bdo_item_id}</p>
+                            <p>Type: {item.type}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => removeItemFromLootTable(itemId)}
+                          className="remove-item-btn"
+                          title="Remove this item"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               )}
             </div>
           ) : (
-            <div className="no-location-selected">
-              <p>Select a location from the list to view or edit its loot table.</p>
+            <div className="no-loot-table lt-error-state">
+              <p>⚠️ This location is missing its loot table!</p>
+              <p>This should not happen. Please contact support or try refreshing the page.</p>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Add Item Modal */}
       {showAddItemModal && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal-full-width">
             <div className="modal-header">
-              <h3>Add Item to Loot Table</h3>
+              <h3>Add Items to Loot Table</h3>
               <button 
-                onClick={() => setShowAddItemModal(false)}
+                onClick={() => {
+                  setShowAddItemModal(false);
+                  setStagedItems([]);
+                  setSelectedItemId(null);
+                }}
                 className="modal-close"
               >
                 ×
               </button>
             </div>
-            <div className="modal-content">
-              <div className="item-selector">
-                <label>Select Item:</label>
-                <select 
-                  value={selectedItemId || ''}
-                  onChange={(e) => setSelectedItemId(Number(e.target.value) || null)}
-                >
-                  <option value="">-- Select an item --</option>
-                  {availableItems.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} (ID: {item.bdo_item_id}) - {item.type}
-                    </option>
-                  ))}
-                </select>
+            
+            <div className="modal-content-full">
+              <div className="add-item-section">
+                <h4>Select Item to Add</h4>
+                <div className="item-selection-row">
+                  <select 
+                    value={selectedItemId || ''} 
+                    onChange={(e) => {
+                      const itemId = e.target.value ? parseInt(e.target.value) : null;
+                      setSelectedItemId(itemId);
+                      if (itemId) {
+                        addItemToStaging(itemId);
+                        setSelectedItemId(null); // Reset selection after adding
+                      }
+                    }}
+                    className="item-select-wide"
+                  >
+                    <option value="">Select an item...</option>
+                    {filteredAvailableItems.map(item => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} (ID: {item.bdo_item_id}) - {item.type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
-            <div className="modal-actions">
-              <button 
-                onClick={() => setShowAddItemModal(false)}
-                className="cancel-btn"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={addItemToLootTable}
-                className="add-btn"
-                disabled={!selectedItemId}
-              >
-                Add Item
-              </button>
+
+              {stagedItems.length > 0 && (
+                <div className="staging-section">
+                  <h4>Staged Items ({stagedItems.length})</h4>
+                  <div className="staged-items-grid">
+                    {stagedItems.map(item => (
+                      <div key={item.bdo_item_id} className="staged-item">
+                        <span className="staged-item-name">{item.name}</span>
+                        <span className="staged-item-details">(ID: {item.bdo_item_id}) - {item.type}</span>
+                        <button 
+                          onClick={() => removeItemFromStaging(item.bdo_item_id)}
+                          className="remove-staged-btn"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button onClick={() => {
+                  setShowAddItemModal(false);
+                  setStagedItems([]);
+                  setSelectedItemId(null);
+                }} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button 
+                  onClick={addItemToLootTable} 
+                  disabled={stagedItems.length === 0}
+                  className="btn btn-primary"
+                >
+                  Add {stagedItems.length} Item{stagedItems.length !== 1 ? 's' : ''} to Loot Table
+                </button>
+              </div>
             </div>
           </div>
         </div>

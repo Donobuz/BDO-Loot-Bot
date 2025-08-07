@@ -415,103 +415,6 @@ input:checked + .slider:before {
   border-top: 1px solid var(--card-border);
 }
 
-/* Modern Table */
-.locations-table-container {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-  border: 1px solid var(--card-border);
-}
-
-.locations-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.locations-table th,
-.locations-table td {
-  padding: 16px 20px;
-  text-align: center;
-  border-bottom: 1px solid var(--card-border);
-}
-
-.locations-table th {
-  background: rgba(255, 255, 255, 0.05);
-  font-weight: 700;
-  color: var(--text-primary);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--card-border);
-  user-select: none;
-  transition: all 0.2s ease;
-}
-
-.locations-table th[style*="cursor: pointer"]:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--discord-primary);
-  transform: translateY(-1px);
-}
-
-.locations-table tbody tr {
-  transition: all 0.2s ease;
-  color: var(--text-primary);
-}
-
-.locations-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.05);
-  transform: scale(1.01);
-}
-
-.locations-table tr.archived {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.locations-table tr.archived:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.location-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 15px;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  white-space: nowrap;
-  justify-content: center;
-}
-
-/* Loading and Empty States */
-.loading {
-  text-align: center;
-  padding: 60px;
-  color: var(--text-secondary);
-  font-style: italic;
-  font-size: 16px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--card-border);
-}
-
-.no-locations {
-  text-align: center;
-  padding: 60px;
-  color: var(--text-muted);
-  font-size: 16px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--card-border);
-}
-
 /* Responsive Design */
 @media (max-width: 1024px) {
   .location-management {
@@ -520,11 +423,6 @@ input:checked + .slider:before {
   
   .form-row {
     grid-template-columns: 1fr 1fr;
-  }
-  
-  .locations-table th,
-  .locations-table td {
-    padding: 12px 16px;
   }
 }
 

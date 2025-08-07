@@ -38,15 +38,12 @@ declare global {
       lootTables: {
         getAll: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
         getActive: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
-        getArchived: () => Promise<{ success: boolean; data?: LootTable[]; error?: string }>;
         getById: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         getByLocationId: (locationId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         create: (lootTable: Omit<LootTable, 'id' | 'created' | 'updated'>) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         update: (id: number, updates: Partial<Omit<LootTable, 'id' | 'created' | 'updated'>>) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         addItem: (lootTableId: number, itemId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         removeItem: (lootTableId: number, itemId: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
-        archive: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
-        unarchive: (id: number) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
       };
       user: {
         updateRegion: (discordId: string, region: string) => Promise<{ success: boolean; data?: User; error?: string }>;
@@ -125,7 +122,6 @@ export interface LootTable {
   item_ids: number[];
   created: string;
   updated: string;
-  archived?: string | null;
 }
 
 export interface GrindSession {

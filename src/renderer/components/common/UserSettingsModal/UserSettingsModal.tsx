@@ -103,12 +103,12 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content user-settings-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
+        <div className="user-modal-header">
           <h2>User Settings</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         
-        <div className="modal-body">
+        <div className="user-modal-body">
           <div className="settings-section">
             <h3>Default Region</h3>
             <p className="setting-description">
@@ -185,7 +185,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           </div>
         </div>
 
-        <div className="modal-footer">
+        <div className="user-modal-footer">
           <button 
             className="cancel-button" 
             onClick={handleCancel}

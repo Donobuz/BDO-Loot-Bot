@@ -21,15 +21,6 @@ export const lootTableHandlers = {
     }
   },
 
-  'loot-tables:get-archived': async (event: IpcMainInvokeEvent) => {
-    try {
-      return await lootTableService.getArchived();
-    } catch (error) {
-      console.error('Error getting archived loot tables:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  },
-
   'loot-tables:get-by-id': async (event: IpcMainInvokeEvent, id: number) => {
     try {
       return await lootTableService.getById(id);
@@ -80,24 +71,6 @@ export const lootTableHandlers = {
       return await lootTableService.removeItem(lootTableId, itemId);
     } catch (error) {
       console.error('Error removing item from loot table:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  },
-
-  'loot-tables:archive': async (event: IpcMainInvokeEvent, id: number) => {
-    try {
-      return await lootTableService.archive(id);
-    } catch (error) {
-      console.error('Error archiving loot table:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  },
-
-  'loot-tables:unarchive': async (event: IpcMainInvokeEvent, id: number) => {
-    try {
-      return await lootTableService.unarchive(id);
-    } catch (error) {
-      console.error('Error unarchiving loot table:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

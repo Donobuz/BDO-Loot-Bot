@@ -7,7 +7,7 @@ export class LootTableService extends BaseDatabase {
     try {
       const { data, error } = await this.supabase
         .from('loot_tables')
-        .select('*')
+        .select('id, location_id, item_ids, created, updated')
         .order('created', { ascending: false });
 
       if (error) {
@@ -20,32 +20,24 @@ export class LootTableService extends BaseDatabase {
     }
   }
 
-  // Get active loot tables
+  // Get active loot tables (from non-archived locations)
   async getActive(): Promise<{ success: boolean; data?: LootTable[]; error?: string }> {
     try {
       const { data, error } = await this.supabase
         .from('loot_tables')
-        .select('*')
-        .is('archived', null)
-        .order('created', { ascending: false });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, data: data || [] };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  }
-
-  // Get archived loot tables
-  async getArchived(): Promise<{ success: boolean; data?: LootTable[]; error?: string }> {
-    try {
-      const { data, error } = await this.supabase
-        .from('loot_tables')
-        .select('*')
-        .not('archived', 'is', null)
+        .select(`
+          id,
+          location_id,
+          item_ids,
+          created,
+          updated,
+          locations!loot_tables_location_id_fkey (
+            id,
+            name,
+            archived
+          )
+        `)
+        .is('locations.archived', null)
         .order('created', { ascending: false });
 
       if (error) {
@@ -63,7 +55,7 @@ export class LootTableService extends BaseDatabase {
     try {
       const { data, error } = await this.supabase
         .from('loot_tables')
-        .select('*')
+        .select('id, location_id, item_ids, created, updated')
         .eq('id', id)
         .single();
 
@@ -82,9 +74,8 @@ export class LootTableService extends BaseDatabase {
     try {
       const { data, error } = await this.supabase
         .from('loot_tables')
-        .select('*')
+        .select('id, location_id, item_ids, created, updated')
         .eq('location_id', locationId)
-        .is('archived', null)
         .single();
 
       if (error) {
@@ -251,52 +242,6 @@ export class LootTableService extends BaseDatabase {
       }
     } catch (error) {
       console.warn(`Error updating item ${itemId} loot_table_ids:`, error);
-    }
-  }
-
-  // Archive loot table
-  async archive(id: number): Promise<{ success: boolean; data?: LootTable; error?: string }> {
-    try {
-      const { data, error } = await this.supabase
-        .from('loot_tables')
-        .update({
-          archived: new Date().toISOString(),
-          updated: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  }
-
-  // Unarchive loot table
-  async unarchive(id: number): Promise<{ success: boolean; data?: LootTable; error?: string }> {
-    try {
-      const { data, error } = await this.supabase
-        .from('loot_tables')
-        .update({
-          archived: null,
-          updated: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

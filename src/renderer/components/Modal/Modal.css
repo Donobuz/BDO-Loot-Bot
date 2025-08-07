@@ -59,13 +59,15 @@
 }
 
 .modal-header {
-  padding: 24px 24px 20px 24px;
+  padding: 0 24px 0 24px;
   border-bottom: 1px solid rgba(116, 130, 255, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: linear-gradient(145deg, rgba(30, 30, 46, 0.8), rgba(42, 45, 71, 0.8));
   position: relative;
+  height: 64px;
+  box-sizing: border-box;
 }
 
 .modal-header::after {
@@ -79,12 +81,14 @@
 }
 
 .modal-header h3 {
-  margin: 0;
-  color: #cdd6f4;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #cdd6f4 !important;
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.3px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1;
 }
 
 .modal-close {

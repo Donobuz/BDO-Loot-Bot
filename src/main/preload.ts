@@ -50,15 +50,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lootTables: {
     getAll: () => ipcRenderer.invoke('loot-tables:get-all'),
     getActive: () => ipcRenderer.invoke('loot-tables:get-active'),
-    getArchived: () => ipcRenderer.invoke('loot-tables:get-archived'),
     getById: (id: number) => ipcRenderer.invoke('loot-tables:get-by-id', id),
     getByLocationId: (locationId: number) => ipcRenderer.invoke('loot-tables:get-by-location-id', locationId),
     create: (lootTable: any) => ipcRenderer.invoke('loot-tables:create', lootTable),
     update: (id: number, updates: any) => ipcRenderer.invoke('loot-tables:update', id, updates),
     addItem: (lootTableId: number, itemId: number) => ipcRenderer.invoke('loot-tables:add-item', lootTableId, itemId),
     removeItem: (lootTableId: number, itemId: number) => ipcRenderer.invoke('loot-tables:remove-item', lootTableId, itemId),
-    archive: (id: number) => ipcRenderer.invoke('loot-tables:archive', id),
-    unarchive: (id: number) => ipcRenderer.invoke('loot-tables:unarchive', id),
   },
 
   user: {
