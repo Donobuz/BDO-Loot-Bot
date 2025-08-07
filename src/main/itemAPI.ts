@@ -63,7 +63,6 @@ async function fetchItemFromArsha(bdoItemId: number, region: string): Promise<Ar
           }
           
           const parsedData = JSON.parse(data);
-          console.log(`Successfully fetched item: ${parsedData.name} from ${region}`);
           resolve(parsedData);
         } catch (parseError) {
           reject(new Error(`Failed to parse response from ${region} market API`));
@@ -290,7 +289,6 @@ export const itemHandlers = {
         return item.type === 'marketplace';
       });
       
-      console.log(`Syncing prices for ${marketplaceItems.length} marketplace items out of ${regionItems.length} total items in ${region}`);
       
       for (const item of marketplaceItems) {
         try {
@@ -376,37 +374,29 @@ export const itemHandlers = {
 
   'items:remove-image': async (event: IpcMainInvokeEvent, itemId: number) => {
     try {
-      console.log('🗑️ [BACKEND] removeImage called for itemId:', itemId);
       
       // Get current item to find image URL
       const itemResult = await itemsService.getById(itemId);
       
       if (!itemResult.success || !itemResult.data) {
-        console.log('❌ [BACKEND] Item not found:', itemId);
         return { success: false, error: 'Item not found' };
       }
 
       const item = itemResult.data;
-      console.log('📋 [BACKEND] Current item image_url:', item.image_url);
       
       // Remove image from Supabase Storage if it exists
       if (item.image_url) {
-        console.log('🗂️ [BACKEND] Removing from storage:', item.image_url);
         const removeResult = await storageService.removeImage(item.image_url);
         if (!removeResult.success) {
           console.warn('⚠️ [BACKEND] Failed to remove image from storage:', removeResult.error);
           // Continue with database update even if storage removal fails
         } else {
-          console.log('✅ [BACKEND] Image removed from storage successfully');
         }
       } else {
-        console.log('ℹ️ [BACKEND] No image_url to remove from storage');
       }
 
       // Update item to remove image_url using admin permissions
-      console.log('💾 [BACKEND] Updating database to set image_url to null for itemId:', itemId);
       const updateResult = await adminDatabase.updateItemAsAdmin(itemId, { image_url: null });
-      console.log('💾 [BACKEND] Admin database update result:', updateResult);
       
       return updateResult;
     } catch (error) {
@@ -432,7 +422,6 @@ export const itemHandlers = {
       if (existingItemsResult.success && existingItemsResult.data && existingItemsResult.data.length > 0) {
         // Use the first item's image_url (they should all be the same for a bdo_item_id)
         oldImageUrl = existingItemsResult.data[0].image_url || undefined;
-        console.log(`📋 Found existing image for BDO Item ID ${bdoItemId}: ${oldImageUrl}`);
       }
 
       // Upload image to storage (single upload for all regions)

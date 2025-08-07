@@ -266,11 +266,8 @@ const ItemManagement: React.FC = () => {
         // Handle image removal first if the image was removed (before updating other fields)
         if (originalImageUrl && !editingItem.image_url) {
           try {
-            console.log('🗑️ Removing image from storage bucket and database for item:', editingItem.id);
             const removeResult = await window.electronAPI.items.removeImage(editingItem.id);
-            if (removeResult.success) {
-              console.log('✅ Image removed successfully from storage bucket and database');
-            } else {
+            if (!removeResult.success) {
               console.warn('Failed to remove image:', removeResult.error);
               // Continue with the update even if image removal fails
             }
@@ -285,7 +282,6 @@ const ItemManagement: React.FC = () => {
         if (result.success) {
           // Handle image upload if there's a pending image
           if (pendingImage) {
-            console.log(`📸 Uploading image for item ${editingItem.id}...`);
             
             try {
               // Convert the file to a Uint8Array for the IPC call
@@ -309,9 +305,7 @@ const ItemManagement: React.FC = () => {
                 );
               }
               
-              if (imageUploadResult.success) {
-                console.log(`✅ Image uploaded successfully for edited item`);
-              } else {
+              if (!imageUploadResult.success) {
                 console.warn('Failed to upload image:', imageUploadResult.error);
                 // Don't show alert here as the item was updated successfully
               }
@@ -399,7 +393,6 @@ const ItemManagement: React.FC = () => {
                   );
                   
                   if (imageUploadResult.success) {
-                    console.log(`✅ Image uploaded successfully for global item`);
                   } else {
                     console.warn('Failed to upload image:', imageUploadResult.error);
                   }
@@ -440,7 +433,6 @@ const ItemManagement: React.FC = () => {
                 );
                 
                 if (imageUploadResult.success) {
-                  console.log(`✅ Image uploaded successfully for global item`);
                 } else {
                   console.warn('Failed to upload image:', imageUploadResult.error);
                 }
@@ -568,7 +560,6 @@ const ItemManagement: React.FC = () => {
             );
             
             if (imageUploadResult.success) {
-              console.log(`✅ Image uploaded successfully and applied to ${imageUploadResult.data?.updatedItems || 0} items`);
             } else {
               console.warn('Failed to upload image:', imageUploadResult.error);
               // Don't show alert here as items were created successfully
@@ -872,15 +863,12 @@ const ItemManagement: React.FC = () => {
   };
 
   const handleSort = (field: keyof Item) => {
-    console.log('Sorting by field:', field, 'Current field:', sortField, 'Current direction:', sortDirection);
     if (sortField === field) {
       // If clicking the same field, toggle direction
       const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-      console.log('Toggling direction to:', newDirection);
       setSortDirection(newDirection);
     } else {
       // If clicking a new field, set it as sort field with ascending direction
-      console.log('Setting new sort field:', field);
       setSortField(field);
       setSortDirection('asc');
     }
@@ -936,7 +924,6 @@ const ItemManagement: React.FC = () => {
       );
       
       if (imageUploadResult.success) {
-        console.log(`✅ Bulk image uploaded successfully and applied to ${imageUploadResult.data?.updatedItems || 0} items`);
         await loadItems();
         handleCloseBulkEditModal();
       } else {

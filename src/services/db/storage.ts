@@ -14,19 +14,14 @@ export class StorageService extends BaseDatabase {
   constructor() {
     super();
     // Create a separate admin client with service role for bucket operations
-    console.log('🔑 Creating admin client with service role...');
-    
     try {
       if (!SUPABASE_CONFIG.serviceRoleKey || SUPABASE_CONFIG.serviceRoleKey === 'your_supabase_service_role_key') {
-        console.log('⚠️ Service role key not configured, using anon key');
         this.adminClient = this.supabase;
       } else {
         this.adminClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.serviceRoleKey);
-        console.log('✅ Admin client created successfully');
       }
     } catch (error) {
       console.error('❌ Failed to create admin client:', error);
-      console.log('⚠️ Falling back to regular client');
       this.adminClient = this.supabase; // Fallback to regular client
     }
   }
@@ -36,15 +31,11 @@ export class StorageService extends BaseDatabase {
    */
   async initializeBucket(): Promise<void> {
     try {
-      // Initialize storage bucket
-      
       // Use admin client to list buckets (has full permissions)
-      console.log('🔍 Listing all buckets with admin client...');
       const { data: buckets, error: listError } = await this.adminClient.storage.listBuckets();
       
       if (listError) {
         console.error('❌ Error listing buckets with admin client:', listError);
-        console.log('💡 Falling back to regular client (anon key)...');
         
         // Fallback to regular client
         this.adminClient = this.supabase;
@@ -52,34 +43,24 @@ export class StorageService extends BaseDatabase {
         
         if (fallbackError) {
           console.error('❌ Regular client also failed:', fallbackError);
-          console.log('💡 Bucket listing failed, but we can still try direct access during uploads');
           return;
         }
         
-        console.log('✅ Fallback to regular client successful');
-        console.log('📋 Available buckets:', fallbackBuckets?.map(b => b.name) || []);
         const bucketExists = fallbackBuckets?.some(bucket => bucket.name === this.BUCKET_NAME);
-        console.log(`📂 Bucket ${this.BUCKET_NAME} exists:`, bucketExists);
         
         if (bucketExists) {
-          console.log(`✅ Storage bucket ${this.BUCKET_NAME} found!`);
           this.bucketChecked = true;
           this.bucketExists = true;
         }
         return;
       }
 
-      console.log('� Available buckets:', buckets?.map(b => b.name) || []);
       const bucketExists = buckets?.some(bucket => bucket.name === this.BUCKET_NAME);
-      console.log(`� Bucket ${this.BUCKET_NAME} exists:`, bucketExists);
 
       if (bucketExists) {
-        console.log(`✅ Storage bucket ${this.BUCKET_NAME} found!`);
         this.bucketChecked = true;
         this.bucketExists = true;
       } else {
-        console.log(`🏗️ Creating bucket: ${this.BUCKET_NAME}`);
-        
         // Create the bucket with admin client
         const { error: createError } = await this.adminClient.storage.createBucket(this.BUCKET_NAME, {
           public: true,
@@ -88,7 +69,6 @@ export class StorageService extends BaseDatabase {
         if (createError) {
           console.error('❌ Error creating bucket:', createError);
         } else {
-          console.log(`✅ Created storage bucket: ${this.BUCKET_NAME}`);
           this.bucketChecked = true;
           this.bucketExists = true;
         }
@@ -109,7 +89,6 @@ export class StorageService extends BaseDatabase {
       }
 
       // Always check for bucket existence (don't rely on cached negative results)
-      console.log(`� Checking if bucket ${this.BUCKET_NAME} exists...`);
       const { data: buckets, error: listError } = await this.adminClient.storage.listBuckets();
       
       if (listError) {
@@ -120,7 +99,6 @@ export class StorageService extends BaseDatabase {
       const bucketExists = buckets?.some(bucket => bucket.name === this.BUCKET_NAME);
       
       if (!bucketExists) {
-        console.log(`⚠️ Bucket ${this.BUCKET_NAME} not found - creating it...`);
         const { error: createError } = await this.adminClient.storage.createBucket(this.BUCKET_NAME, {
           public: true,
         });
@@ -129,14 +107,11 @@ export class StorageService extends BaseDatabase {
           console.error('Failed to create bucket:', createError);
           return false;
         }
-        
-        console.log(`✅ Successfully created bucket: ${this.BUCKET_NAME}`);
       }
       
       // Cache the positive result
       this.bucketChecked = true;
       this.bucketExists = true;
-      console.log(`✅ Bucket ${this.BUCKET_NAME} is available`);
       return true;
     } catch (error) {
       console.error('Error ensuring bucket exists:', error);
@@ -286,7 +261,6 @@ export class StorageService extends BaseDatabase {
     try {
       // Remove old image if it exists
       if (oldImageUrl) {
-        console.log(`🗑️ Removing old image for BDO Item ID ${bdoItemId}: ${oldImageUrl}`);
         await this.removeImage(oldImageUrl);
       }
 
@@ -339,14 +313,11 @@ export class StorageService extends BaseDatabase {
    */
   async testServiceRoleKey(): Promise<boolean> {
     if (!this.adminClient || this.adminClient === this.supabase) {
-      console.log('❌ No admin client available (using regular client)');
       return false;
     }
 
     try {
       // Test service role functionality
-      
-      // Test simple operation
       const { data, error } = await this.adminClient.storage.listBuckets();
       
       if (error) {
@@ -354,8 +325,6 @@ export class StorageService extends BaseDatabase {
         return false;
       }
       
-      // Service role key test successful
-      console.log('📋 Buckets accessible:', data?.map(b => b.name) || []);
       return true;
     } catch (error) {
       console.error('❌ Service role test exception:', error);
