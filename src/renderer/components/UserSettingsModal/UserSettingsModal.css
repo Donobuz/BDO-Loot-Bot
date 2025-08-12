@@ -1,5 +1,5 @@
 /* UserSettingsModal.css */
-@import '../../../globals.css';
+@import "../../globals.css";
 
 .user-settings-modal {
   max-width: 600px;
@@ -58,40 +58,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 0 24px 0 !important;
+  padding: 0px 0px 24px 0px !important;
   border-bottom: 1px solid var(--modal-border, #40444b);
   background: none !important;
   border-radius: 16px 16px 0 0;
+  margin-bottom: 0;
 }
 
 .user-settings-modal .user-modal-header h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 24px;
   font-weight: 600;
-  color: var(--text-primary);
   position: relative;
-  margin: 0 24px;
 }
 
-.checkbox-label::before {
-  content: "";
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 16px;
-  width: 3px;
-  height: 16px;
-  background: var(--input-border, #40444b);
-  border-radius: 2px;
-  opacity: 1;
-  transition: all 0.2s ease;
-}
-
- .modern-checkbox input[type="checkbox"]:checked ~ .checkbox-text .checkbox-label::before {
-  background: #43b581;
-}
-
-.close-button {
+.user-settings-modal .close-button {
   background: none;
   border: none;
   color: var(--text-secondary);
@@ -107,17 +89,16 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.close-button:hover {
+.user-settings-modal .close-button:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   transform: scale(1.1);
 }
 
-.modal-body {
+.user-modal-body {
   padding: 24px;
   flex: 1;
   overflow-y: auto;
-  background: var(--modal-bg, #36393f);
 }
 
 .settings-section {
@@ -132,25 +113,14 @@
   margin: 0 0 8px 0;
   color: var(--text-primary);
   font-size: 20px;
-.individual-regions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
-}
   font-weight: 700;
 }
 
 .setting-description {
-  padding: 0 0 4px 0;
+  padding: 0 0 16px 0;
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.5;
-}
-
-.region-selector {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
 }
 
 /* Modern dropdown styling */
@@ -167,7 +137,8 @@
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    box-shadow 0.2s ease;
   appearance: none;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23dcddde' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 12px center;
@@ -211,28 +182,31 @@
   border-radius: 8px;
   transition: all 0.2s ease;
   overflow: hidden;
-  background: var(--input-bg, #2f3136);
+  background: transparent;
   position: relative;
   cursor: pointer;
-}
-.checkbox-sublabel {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.3;
 }
 
 .checkbox-item:hover {
   border-color: var(--discord-primary);
-  background: var(--input-hover-bg, #36393f);
+  background: rgba(88, 101, 242, 0.05);
 }
 
 .checkbox-item.all-regions {
-  background: linear-gradient(135deg, rgba(88, 101, 242, 0.1) 0%, rgba(88, 101, 242, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(88, 101, 242, 0.1) 0%,
+    rgba(88, 101, 242, 0.05) 100%
+  );
   border: 1px solid rgba(88, 101, 242, 0.3);
 }
 
 .checkbox-item.all-regions:hover {
-  background: linear-gradient(135deg, rgba(88, 101, 242, 0.15) 0%, rgba(88, 101, 242, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(88, 101, 242, 0.15) 0%,
+    rgba(88, 101, 242, 0.08) 100%
+  );
   border-color: rgba(88, 101, 242, 0.5);
   box-shadow: 0 4px 16px rgba(88, 101, 242, 0.2);
 }
@@ -258,18 +232,6 @@
   min-height: 56px;
   margin: 0;
   cursor: pointer;
-}
-
-/* Override modal.css label styles for our modern checkboxes */
-.user-settings-modal .modal-body label.modern-checkbox,
-.user-settings-modal .modal-body .modern-checkbox label,
-.user-settings-modal .modal-body .checkbox-label,
-.user-settings-modal .modal-body .modern-checkbox .checkbox-label,
-.user-settings-modal .modal-body .checkbox-item label,
-.user-settings-modal .modal-body .checkbox-item .checkbox-label {
-  display: inline !important;
-  margin-bottom: 0 !important;
-  font-weight: 600 !important;
 }
 
 .modern-checkbox input[type="checkbox"] {
@@ -311,7 +273,10 @@
   transition: all 0.2s ease;
 }
 
-.modern-checkbox input[type="checkbox"]:checked ~ .checkbox-text .checkbox-label::before {
+.modern-checkbox
+  input[type="checkbox"]:checked
+  ~ .checkbox-text
+  .checkbox-label::before {
   background: #43b581;
 }
 
@@ -347,7 +312,12 @@
   flex: 1;
   height: 1px;
   border: none;
-  background: linear-gradient(to right, transparent, var(--input-border, #40444b), transparent);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--input-border, #40444b),
+    transparent
+  );
 }
 
 .separator span {
@@ -367,17 +337,17 @@
   gap: 12px;
 }
 
-.modal-footer {
+.user-modal-footer {
   display: flex;
   gap: 16px;
-  padding: 24px 24px 0 24px;
+  padding: 24px;
   border-top: 1px solid var(--modal-border, #40444b);
   justify-content: stretch;
   border-radius: 0 0 16px 16px;
   width: 100%;
 }
 
-.cancel-button {
+.user-settings-modal .cancel-button {
   background: var(--input-bg, #2f3136);
   border: 2px solid var(--input-border, #40444b);
   color: var(--text-primary);
@@ -388,22 +358,23 @@
   font-size: 14px;
   font-weight: 600;
   flex: 1;
-  margin-top: 0 !important;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.cancel-button:hover {
+.user-settings-modal .cancel-button:hover {
   background: var(--input-hover-bg, #36393f);
   border-color: var(--text-secondary);
   transform: translateY(-1px);
 }
 
-.cancel-button:disabled {
+.user-settings-modal .cancel-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-.save-button {
+.user-settings-modal .save-button {
   background: var(--discord-primary);
   border: 2px solid var(--discord-primary);
   color: white;
@@ -414,21 +385,167 @@
   font-size: 14px;
   font-weight: 700;
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
   box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
 }
 
-.save-button:hover {
+.user-settings-modal .save-button:hover {
   background: var(--discord-hover);
   border-color: var(--discord-hover);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(88, 101, 242, 0.6);
 }
 
-.save-button:disabled {
+.user-settings-modal .save-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Modern HR Separator */
+.settings-separator {
+  margin: 32px 0;
+  position: relative;
+}
+
+.settings-separator hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--input-border, #40444b) 20%,
+    var(--input-border, #40444b) 80%,
+    transparent 100%
+  );
+  position: relative;
+}
+
+.settings-separator hr::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: var(--modal-bg, #36393f);
+  border: 2px solid var(--input-border, #40444b);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--modal-bg, #36393f);
+}
+
+/* OCR Region Selection Styles */
+.ocr-region-section {
+  border: 2px solid var(--input-border, #40444b);
+  border-radius: 12px;
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(67, 181, 129, 0.05) 0%,
+    rgba(67, 181, 129, 0.02) 100%
+  );
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.ocr-region-section.section-highlight {
+  border-color: #43b581;
+  background: linear-gradient(
+    135deg,
+    rgba(67, 181, 129, 0.15) 0%,
+    rgba(67, 181, 129, 0.08) 100%
+  );
+  box-shadow: 0 0 20px rgba(67, 181, 129, 0.3);
+  transform: scale(1.02);
+}
+
+.ocr-region-section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #43b581 0%, #3ba55c 100%);
+  border-radius: 4px 0 0 4px;
+}
+
+.ocr-region-section h3 {
+  color: #43b581;
+  margin-bottom: 12px;
+}
+
+.ocr-region-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ocr-region-display {
+  background: transparent;
+  border: 1px solid var(--input-border, #40444b);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ocr-region-display.has-region {
+  color: var(--text-primary);
+  border-color: #43b581;
+}
+
+.ocr-region-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.select-region-button {
+  background: #43b581;
+  border: 2px solid #43b581;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.select-region-button:hover {
+  background: #3ba55c;
+  border-color: #3ba55c;
+  transform: translateY(-1px);
+}
+
+.clear-region-button {
+  background: transparent;
+  border: 2px solid var(--input-border, #40444b);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.clear-region-button:hover {
+  border-color: #ed4245;
+  color: #ed4245;
+  transform: translateY(-1px);
+}
+
+.clear-region-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Responsive design */
@@ -437,24 +554,28 @@
     width: 95vw;
     max-height: 85vh;
   }
-  
+
   .user-settings-modal .user-modal-header,
   .user-settings-modal .user-modal-body {
     padding: var(--spacing-md);
   }
-  
+
   .user-modal-footer {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
-  .cancel-button,
-  .save-button {
+
+  .user-settings-modal .cancel-button,
+  .user-settings-modal .save-button {
     width: 100%;
     min-width: unset;
   }
-  
+
   .individual-regions {
     grid-template-columns: 1fr;
+  }
+
+  .ocr-region-buttons {
+    flex-direction: column;
   }
 }

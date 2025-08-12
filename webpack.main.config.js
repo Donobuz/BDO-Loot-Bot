@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 // Load environment variables
 const env = dotenv.config().parsed;
@@ -32,7 +33,34 @@ module.exports = [
       ]
     },
     plugins: [
-      new webpack.DefinePlugin(envKeys)
+      new webpack.DefinePlugin(envKeys),
+      // Copy HTML and JS files needed by main process
+      {
+        apply: (compiler) => {
+          compiler.hooks.afterEmit.tap('CopyMainAssets', () => {
+            // Copy regionSelector.html
+            const htmlSrc = path.resolve(__dirname, 'src/main/regionSelector.html');
+            const htmlDest = path.resolve(__dirname, 'dist/main/regionSelector.html');
+            if (fs.existsSync(htmlSrc)) {
+              fs.copyFileSync(htmlSrc, htmlDest);
+            }
+            
+            // Copy regionSelectorPreload.js
+            const jsSrc = path.resolve(__dirname, 'src/main/regionSelectorPreload.js');
+            const jsDest = path.resolve(__dirname, 'dist/main/regionSelectorPreload.js');
+            if (fs.existsSync(jsSrc)) {
+              fs.copyFileSync(jsSrc, jsDest);
+            }
+            
+            // Copy streamingOverlay.html
+            const overlayHtmlSrc = path.resolve(__dirname, 'src/main/streamingOverlay.html');
+            const overlayHtmlDest = path.resolve(__dirname, 'dist/main/streamingOverlay.html');
+            if (fs.existsSync(overlayHtmlSrc)) {
+              fs.copyFileSync(overlayHtmlSrc, overlayHtmlDest);
+            }
+          });
+        }
+      }
     ],
     externals: {
       'sharp': 'commonjs sharp'

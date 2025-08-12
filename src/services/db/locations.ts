@@ -1,5 +1,6 @@
 import { BaseDatabase } from './base';
 import { Location } from './types';
+import { lootTableService } from './lootTables';
 
 export class LocationService extends BaseDatabase {
   
@@ -53,6 +54,23 @@ export class LocationService extends BaseDatabase {
       .single();
     
     if (error) throw error;
+
+    // Automatically create a loot table for this location
+    try {
+      const lootTableResult = await lootTableService.create({
+        location_id: data.id,
+        item_ids: [] // Start with empty item list
+      });
+      
+      if (!lootTableResult.success) {
+        console.warn(`Failed to create loot table for location ${data.id}:`, lootTableResult.error);
+      } else {
+        console.log(`✅ Created loot table for location "${data.name}" (ID: ${data.id})`);
+      }
+    } catch (lootTableError) {
+      console.warn(`Error creating loot table for location ${data.id}:`, lootTableError);
+    }
+
     return data;
   }
 
@@ -104,6 +122,30 @@ export class LocationService extends BaseDatabase {
       .single();
     
     if (error) throw error;
+
+    // Check if a loot table exists for this location, create one if it doesn't
+    try {
+      const lootTableResult = await lootTableService.getByLocationId(data.id);
+      
+      if (!lootTableResult.success) {
+        console.warn(`Error checking loot table for location ${data.id}:`, lootTableResult.error);
+      } else if (!lootTableResult.data) {
+        // No loot table exists, create one
+        const createResult = await lootTableService.create({
+          location_id: data.id,
+          item_ids: [] // Start with empty item list
+        });
+        
+        if (!createResult.success) {
+          console.warn(`Failed to create loot table for unarchived location ${data.id}:`, createResult.error);
+        } else {
+          console.log(`✅ Created loot table for unarchived location "${data.name}" (ID: ${data.id})`);
+        }
+      }
+    } catch (lootTableError) {
+      console.warn(`Error handling loot table for unarchived location ${data.id}:`, lootTableError);
+    }
+
     return data;
   }
 

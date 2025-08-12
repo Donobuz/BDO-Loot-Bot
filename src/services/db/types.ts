@@ -14,6 +14,13 @@ export interface UserPreferences {
   user_id: number;
   preferred_region: string;
   display_regions: string[];
+  designated_ocr_region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    display?: string;
+  } | null; // OCR region for loot detection
   created: string;
   updated: string;
 }

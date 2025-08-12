@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { UserPreferences } from '../../../types';
-import { BDO_REGIONS } from '../../../constants/regions';
+import { UserPreferences } from '../../types';
+import { BDO_REGIONS } from '../../constants/regions';
 import './UserSettingsModal.css';
+
+interface OCRRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  display?: string;
+}
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -9,6 +17,7 @@ interface UserSettingsModalProps {
   currentPreferences: UserPreferences;
   onSave: (preferences: Partial<UserPreferences>) => Promise<void>;
   isLoading?: boolean;
+  focusSection?: 'ocr' | null; // Add prop to focus on specific section
 }
 
 export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
@@ -16,17 +25,60 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   onClose,
   currentPreferences,
   onSave,
-  isLoading = false
+  isLoading = false,
+  focusSection = null
 }) => {
   const [preferredRegion, setPreferredRegion] = useState<string>(currentPreferences.preferred_region);
   const [displayRegions, setDisplayRegions] = useState<string[]>(currentPreferences.display_regions);
+  const [ocrRegion, setOcrRegion] = useState<OCRRegion | null>(
+    currentPreferences.designated_ocr_region || null
+  );
   const [saving, setSaving] = useState(false);
+  const [selectingRegion, setSelectingRegion] = useState(false);
 
   // Update local state when preferences change
   useEffect(() => {
     setPreferredRegion(currentPreferences.preferred_region);
     setDisplayRegions(currentPreferences.display_regions);
+    setOcrRegion(currentPreferences.designated_ocr_region || null);
   }, [currentPreferences]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Store original overflow style
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      
+      // Prevent scrolling
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup function to restore scrolling
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  // Focus on specific section when modal opens
+  useEffect(() => {
+    if (isOpen && focusSection === 'ocr') {
+      // Small delay to ensure modal is fully rendered
+      setTimeout(() => {
+        const ocrSection = document.querySelector('.ocr-region-section');
+        if (ocrSection) {
+          ocrSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          // Add a subtle highlight effect
+          ocrSection.classList.add('section-highlight');
+          setTimeout(() => {
+            ocrSection.classList.remove('section-highlight');
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [isOpen, focusSection]);
 
   const handleDisplayRegionToggle = (regionValue: string) => {
     if (regionValue === 'ALL') {
@@ -69,6 +121,39 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     }
   };
 
+  const handleSelectRegion = async () => {
+    if (selectingRegion) return;
+    
+    try {
+      setSelectingRegion(true);
+      
+      // Call Electron API to open region selector
+      const result = await window.electronAPI.selectOCRRegion();
+      
+      if (result.success && result.region) {
+        setOcrRegion(result.region);
+      }
+    } catch (error) {
+      console.error('Error selecting OCR region:', error);
+    } finally {
+      setSelectingRegion(false);
+    }
+  };
+
+  const handleClearRegion = () => {
+    setOcrRegion(null);
+  };
+
+  const formatRegionDisplay = (region: OCRRegion | null): string => {
+    if (!region) {
+      return 'No region selected - click "Select Region" to choose an area of your screen for loot detection';
+    }
+    
+    return `Region: ${region.width}×${region.height} at (${region.x}, ${region.y})${
+      region.display ? ` on ${region.display}` : ''
+    }`;
+  };
+
   const handleSave = async () => {
     if (saving) return;
     
@@ -80,7 +165,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       
       await onSave({
         preferred_region: preferredRegion,
-        display_regions: finalDisplayRegions
+        display_regions: finalDisplayRegions,
+        designated_ocr_region: ocrRegion
       });
       
       onClose();
@@ -95,6 +181,7 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     // Reset to current preferences
     setPreferredRegion(currentPreferences.preferred_region);
     setDisplayRegions(currentPreferences.display_regions);
+    setOcrRegion(currentPreferences.designated_ocr_region || null);
     onClose();
   };
 
@@ -180,6 +267,42 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                     </span>
                   </label>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Modern HR separator */}
+          <div className="settings-separator">
+            <hr />
+          </div>
+
+          <div className="settings-section ocr-region-section">
+            <h3>Loot Detection Region</h3>
+            <p className="setting-description">
+              Select the area of your screen where loot messages appear for automatic detection during grind sessions.
+            </p>
+            
+            <div className="ocr-region-controls">
+              <div className={`ocr-region-display ${ocrRegion ? 'has-region' : ''}`}>
+                {formatRegionDisplay(ocrRegion)}
+              </div>
+              
+              <div className="ocr-region-buttons">
+                <button
+                  className="select-region-button"
+                  onClick={handleSelectRegion}
+                  disabled={selectingRegion || saving || isLoading}
+                >
+                  {selectingRegion ? 'Selecting...' : 'Select Region'}
+                </button>
+                
+                <button
+                  className="clear-region-button"
+                  onClick={handleClearRegion}
+                  disabled={!ocrRegion || saving || isLoading}
+                >
+                  Clear Region
+                </button>
               </div>
             </div>
           </div>

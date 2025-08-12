@@ -1,12 +1,5 @@
 import { BaseDatabase } from './base';
-
-export interface UserPreferences {
-  user_id: string;
-  preferred_region: string;
-  display_regions: string[];
-  created: string;
-  updated: string;
-}
+import { UserPreferences } from './types';
 
 export class UserPreferencesService extends BaseDatabase {
   constructor() {
@@ -35,6 +28,7 @@ export class UserPreferencesService extends BaseDatabase {
         user_id: data.user_id,
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
+        designated_ocr_region: data.designated_ocr_region,
         created: data.created,
         updated: data.updated
       };
@@ -56,7 +50,8 @@ export class UserPreferencesService extends BaseDatabase {
         .insert({
           user_id: userId,
           preferred_region: preferences.preferred_region || 'NA',
-          display_regions: preferences.display_regions || ['NA']
+          display_regions: preferences.display_regions || ['NA'],
+          designated_ocr_region: preferences.designated_ocr_region || null
         })
         .select()
         .single();
@@ -69,6 +64,7 @@ export class UserPreferencesService extends BaseDatabase {
         user_id: data.user_id,
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
+        designated_ocr_region: data.designated_ocr_region,
         created: data.created,
         updated: data.updated
       };
@@ -95,6 +91,10 @@ export class UserPreferencesService extends BaseDatabase {
         updates.display_regions = preferences.display_regions;
       }
 
+      if (preferences.designated_ocr_region !== undefined) {
+        updates.designated_ocr_region = preferences.designated_ocr_region;
+      }
+
       if (Object.keys(updates).length === 0) {
         return { success: false, error: 'No valid updates provided' };
       }
@@ -117,6 +117,7 @@ export class UserPreferencesService extends BaseDatabase {
         user_id: data.user_id,
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
+        designated_ocr_region: data.designated_ocr_region,
         created: data.created,
         updated: data.updated
       };

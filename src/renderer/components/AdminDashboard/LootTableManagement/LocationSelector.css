@@ -284,6 +284,18 @@
   color: #6b7280;
 }
 
+.status-indicator.status-ready {
+  color: #22c55e; /* Green for loot tables with items */
+}
+
+.status-indicator.status-empty {
+  color: #fbbf24; /* Yellow/orange for empty loot tables */
+}
+
+.status-indicator.status-error {
+  color: #f87171; /* Red for missing loot tables */
+}
+
 /* Card View Styles */
 .location-item {
   padding: 16px;

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BDO Loot Tracker - Streaming Overlay</title>
+    <style>
+      :root {
+        --primary-bg: #1e1e2e;
+        --card-bg: rgba(30, 30, 46, 0.95);
+        --card-border: rgba(255, 255, 255, 0.1);
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0b2;
+        --input-bg: #2f3136;
+        --input-border: #40444b;
+        --discord-primary: #5865f2;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #00ff00; /* Chroma key green */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
+      }
+
+      .overlay-container {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        margin: 20px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--card-border);
+      }
+
+      .session-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .session-status h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #43b581;
+        box-shadow: 0 0 10px rgba(67, 181, 129, 0.5);
+        position: relative;
+      }
+
+      .status-indicator::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border: 2px solid #43b581;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.3;
+        }
+      }
+
+      .session-duration {
+        font-family: "Courier New", monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #43b581;
+        background: rgba(67, 181, 129, 0.1);
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(67, 181, 129, 0.3);
+      }
+
+      .session-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+      }
+
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .stat-value {
+        font-size: 1.25rem;
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+
+      .active-loot-items {
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+      }
+
+      .active-loot-items h4 {
+        margin: 0 0 16px 0;
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .active-items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .active-loot-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .active-loot-item:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .item-image-container {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .item-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      .item-image-placeholder {
+        font-size: 16px;
+        opacity: 0.6;
+      }
+
+      .item-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .item-counter {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .item-counter .count {
+        font-size: 16px;
+        font-weight: 700;
+        color: #43b581;
+      }
+
+      .item-counter .value {
+        font-size: 10px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .no-items {
+        text-align: center;
+        color: var(--text-secondary);
+        font-style: italic;
+        padding: 40px 20px;
+      }
+
+      /* Scrollbar */
+      .active-items-grid::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-thumb {
+        background: var(--input-border);
+        border-radius: 3px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay-container">
+      <div class="session-header">
+        <div class="session-status">
+          <div class="status-indicator"></div>
+          <h3>Active Session</h3>
+        </div>
+        <div class="session-duration" id="sessionDuration">0:00</div>
+      </div>
+
+      <div class="session-stats">
+        <div class="stat">
+          <span class="stat-label">Total Items:</span>
+          <span class="stat-value" id="totalItems">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Location:</span>
+          <span class="stat-value" id="location">No Location</span>
+        </div>
+      </div>
+
+      <div class="active-loot-items">
+        <h4>Loot Detected (<span id="itemCount">0</span>)</h4>
+        <div class="active-items-grid" id="lootItems">
+          <div class="no-items">No items detected yet</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentData = null;
+      let sessionStartTime = null;
+
+      // Listen for data from main process
+      window.electronAPI.onOverlayData((data) => {
+        console.log("Overlay received data:", data);
+        currentData = data;
+        if (!sessionStartTime) {
+          sessionStartTime = new Date();
+        }
+        updateOverlay(data);
+      });
+
+      function updateOverlay(data) {
+        console.log("Updating overlay with data:", data);
+        // Update location
+        const locationElement = document.getElementById("location");
+        locationElement.textContent = data.location?.name || "No Location";
+
+        // Calculate totals
+        let totalItems = 0;
+        let totalValue = 0;
+
+        data.items.forEach((item) => {
+          const count = data.itemCounts[item.id] || 0;
+          totalItems += count;
+          totalValue += count * item.calculatedPrice;
+        });
+
+        // Update stats
+        document.getElementById("totalItems").textContent = totalItems;
+        document.getElementById("itemCount").textContent = totalItems;
+
+        // Update items list
+        const lootItemsContainer = document.getElementById("lootItems");
+
+        if (totalItems === 0) {
+          lootItemsContainer.innerHTML =
+            '<div class="no-items">No items detected yet</div>';
+          return;
+        }
+
+        // Show all items like the main app
+        lootItemsContainer.innerHTML = data.items
+          .map((item) => {
+            const count = data.itemCounts[item.id] || 0;
+            const value = count * item.calculatedPrice;
+
+            return `
+                    <div class="active-loot-item">
+                        <div class="item-image-container">
+                            ${
+                              item.image_url
+                                ? `<img src="${item.image_url}" alt="${item.name}" class="item-image">`
+                                : `<div class="item-image-placeholder">📦</div>`
+                            }
+                        </div>
+                        <div class="item-info">
+                            <span class="item-name" title="${item.name}">${
+              item.name
+            }</span>
+                            <div class="item-counter">
+                                <span class="count">${count}</span>
+                                <span class="value">${value.toLocaleString()} silver</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      function updateSessionDuration() {
+        if (sessionStartTime) {
+          const now = new Date();
+          const diff = now.getTime() - sessionStartTime.getTime();
+          const minutes = Math.floor(diff / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+          document.getElementById(
+            "sessionDuration"
+          ).textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        }
+      }
+
+      // Update duration every second
+      setInterval(updateSessionDuration, 1000);
+
+      // Also update immediately
+      updateSessionDuration();
+
+      // Initial setup
+      document.addEventListener("DOMContentLoaded", () => {
+        if (currentData) {
+          updateOverlay(currentData);
+        }
+      });
+    </script>
+  </body>
+</html>

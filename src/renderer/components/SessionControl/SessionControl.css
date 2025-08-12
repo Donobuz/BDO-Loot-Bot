@@ -1,0 +1,606 @@
+/* SessionControl.css */
+.session-control {
+  background: transparent; /* Let parent handle background */
+  border: none; /* Let parent handle border */
+  border-radius: 0; /* Let parent handle border radius */
+  padding: 24px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+/* Active state styling handled by parent */
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.session-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-status h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.status-indicator.active {
+  background: #43b581;
+  box-shadow: 0 0 10px rgba(67, 181, 129, 0.5);
+}
+
+.status-indicator.active::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #43b581;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.inactive {
+  background: var(--text-secondary);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+
+.session-duration {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #43b581;
+  background: rgba(67, 181, 129, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(67, 181, 129, 0.3);
+}
+
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.session-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.start-session-button {
+  background: #43b581;
+  border: 2px solid #43b581;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 160px;
+}
+
+.start-session-button:hover:not(:disabled) {
+  background: #3ba55c;
+  border-color: #3ba55c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 181, 129, 0.4);
+}
+
+.start-session-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stop-session-button {
+  background: #ed4245;
+  border: 2px solid #ed4245;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 160px;
+}
+
+.stop-session-button:hover {
+  background: #c73e41;
+  border-color: #c73e41;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(237, 66, 69, 0.4);
+}
+
+.configure-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid;
+}
+
+.configure-button.primary {
+  background: var(--discord-primary);
+  border-color: var(--discord-primary);
+  color: white;
+  min-width: 250px;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.configure-button.primary:hover {
+  background: var(--discord-hover);
+  border-color: var(--discord-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+}
+
+.configure-button.secondary {
+  background: transparent;
+  border-color: var(--input-border, #40444b);
+  color: var(--text-secondary);
+  min-width: 160px;
+}
+
+.configure-button.secondary:hover {
+  border-color: var(--discord-primary);
+  color: var(--discord-primary);
+  transform: translateY(-1px);
+}
+
+/* Not Ready State */
+.session-not-ready {
+  text-align: center;
+  padding: 20px;
+}
+
+.setup-message {
+  margin-bottom: 24px;
+}
+
+.setup-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  opacity: 0.8;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.setup-message h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.setup-message p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.setup-help {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.help-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Ready State */
+.session-ready {
+  padding: 20px;
+}
+
+/* Location Selection */
+.location-selection {
+  margin-bottom: 24px;
+}
+
+.location-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.location-dropdown {
+  width: 100%;
+  background: var(--input-bg, #2f3136);
+  border: 2px solid var(--input-border, #40444b);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23dcddde' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: 40px;
+}
+
+.location-dropdown:hover {
+  border-color: var(--discord-primary);
+}
+
+.location-dropdown:focus {
+  outline: none;
+  border-color: var(--discord-primary);
+  box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.2);
+}
+
+.location-dropdown:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+/* Loot Items Section */
+.loot-items-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.loot-items-section h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.no-items {
+  margin: 0;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Compact Loot Items Grid */
+.loot-items-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.loot-item-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--input-bg, #2f3136);
+  border: 1px solid var(--input-border, #40444b);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 120px;
+}
+
+.loot-item-compact:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.item-image-container {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.item-image-placeholder {
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+.item-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: center;
+}
+
+.item-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.price-input-compact {
+  width: 80px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--input-border, #40444b);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+  text-align: center !important;
+  font-weight: 600;
+  /* Force text centering */
+  direction: ltr;
+}
+
+.price-input-compact:focus {
+  outline: none;
+  border-color: var(--discord-primary);
+  background: var(--input-bg, #2f3136);
+}
+
+.currency-compact {
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Scrollbar for loot items */
+.loot-items-compact::-webkit-scrollbar {
+  width: 6px;
+}
+
+.loot-items-compact::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.loot-items-compact::-webkit-scrollbar-thumb {
+  background: var(--input-border, #40444b);
+  border-radius: 3px;
+}
+
+.loot-items-compact::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Active Session Loot Items */
+.active-loot-items {
+  margin: 24px 0;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.active-loot-items h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.active-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.active-loot-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--input-bg, #2f3136);
+  border: 1px solid var(--input-border, #40444b);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.active-loot-item:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.active-loot-item .item-image-container {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.active-loot-item .item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.active-loot-item .item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item-counter .count {
+  font-size: 16px;
+  font-weight: 700;
+  color: #43b581;
+}
+
+.item-counter .value {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+
+
+.streaming-overlay-button {
+  background: #9146ff;
+  border: 2px solid #9146ff;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 160px;
+}
+
+.streaming-overlay-button:hover {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(145, 70, 255, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .session-control {
+    padding: 16px;
+  }
+  
+  .session-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .session-duration {
+    font-size: 1.25rem;
+    align-self: center;
+  }
+  
+  .session-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .session-actions {
+    flex-direction: column;
+  }
+  
+  .start-session-button,
+  .stop-session-button,
+  .configure-button,
+  .streaming-overlay-button {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .active-items-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -92,7 +92,7 @@
   background: var(--discord-hover);
 }
 
-.cancel-button {
+.login-cancel-button {
   background: var(--button-bg);
   color: var(--text-secondary);
   border: 1px solid var(--button-border);
@@ -106,7 +106,7 @@
   width: 100%;
 }
 
-.cancel-button:hover {
+.login-cancel-button:hover {
   background: var(--button-hover-bg);
   border-color: var(--button-hover-border);
   color: var(--text-primary);

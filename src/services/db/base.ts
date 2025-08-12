@@ -5,7 +5,8 @@ export class BaseDatabase {
   protected supabase: SupabaseClient;
 
   constructor() {
-    this.supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    // Use service role key for Electron app to bypass RLS and have full database access
+    this.supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.serviceRoleKey);
   }
 
   async testConnection(): Promise<void> {

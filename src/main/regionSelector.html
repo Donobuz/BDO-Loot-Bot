@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select OCR Region</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: rgba(0, 0, 0, 0.3);
+            cursor: crosshair;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1;
+        }
+
+        .selection-box {
+            position: absolute;
+            border: 2px solid #43b581;
+            background: rgba(67, 181, 129, 0.1);
+            pointer-events: none;
+            z-index: 2;
+            display: none;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 3;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .coordinates {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            z-index: 3;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .cancel-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(237, 66, 69, 0.9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 3;
+            transition: background 0.2s ease;
+        }
+
+        .cancel-button:hover {
+            background: rgba(237, 66, 69, 1);
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div class="selection-box" id="selectionBox"></div>
+    
+    <div class="instructions">
+        Click and drag to select the area where loot messages appear
+    </div>
+    
+    <div class="coordinates" id="coordinates">
+        Position: (0, 0) | Size: 0×0
+    </div>
+    
+    <button class="cancel-button" onclick="cancelSelection()">
+        Cancel (ESC)
+    </button>
+
+    <script>
+        let isSelecting = false;
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let currentY = 0;
+        let displayInfo = null;
+
+        const overlay = document.getElementById('overlay');
+        const selectionBox = document.getElementById('selectionBox');
+        const coordinates = document.getElementById('coordinates');
+
+        // Listen for display info from main process
+        window.regionSelectorAPI.onDisplayInfo((data) => {
+            displayInfo = data;
+        });
+
+        // Mouse events
+        overlay.addEventListener('mousedown', startSelection);
+        overlay.addEventListener('mousemove', updateSelection);
+        overlay.addEventListener('mouseup', endSelection);
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                cancelSelection();
+            }
+        });
+
+        function startSelection(e) {
+            isSelecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            currentX = e.clientX;
+            currentY = e.clientY;
+            
+            selectionBox.style.display = 'block';
+            coordinates.style.display = 'block';
+            updateSelectionBox();
+        }
+
+        function updateSelection(e) {
+            if (!isSelecting) return;
+            
+            currentX = e.clientX;
+            currentY = e.clientY;
+            updateSelectionBox();
+        }
+
+        function updateSelectionBox() {
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            
+            selectionBox.style.left = left + 'px';
+            selectionBox.style.top = top + 'px';
+            selectionBox.style.width = width + 'px';
+            selectionBox.style.height = height + 'px';
+            
+            coordinates.textContent = `Position: (${left}, ${top}) | Size: ${width}×${height}`;
+        }
+
+        function endSelection(e) {
+            if (!isSelecting) return;
+            
+            isSelecting = false;
+            
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            
+            // Minimum size check
+            if (width < 10 || height < 10) {
+                selectionBox.style.display = 'none';
+                coordinates.style.display = 'none';
+                return;
+            }
+            
+            // Send selection to main process
+            const region = {
+                x: left,
+                y: top,
+                width: width,
+                height: height,
+                display: displayInfo ? displayInfo.displays.find(d => d.id === displayInfo.primary)?.label : undefined
+            };
+            
+            window.regionSelectorAPI.selectRegion(region);
+        }
+
+        function cancelSelection() {
+            window.regionSelectorAPI.cancelSelection();
+        }
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            window.regionSelectorAPI.removeAllListeners();
+        });
+    </script>
+</body>
+</html>

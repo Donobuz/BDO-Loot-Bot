@@ -226,7 +226,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
             </thead>
             <tbody>
               {paginatedLocations.map(location => {
-                const hasLootTable = lootTables.some(lt => lt.location_id === location.id);
+                const locationStatus = getLocationStatus(location);
                 
                 return (
                   <tr 
@@ -239,11 +239,9 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
                     <td>{location.ap}</td>
                     <td>{location.dp}</td>
                     <td>
-                      {hasLootTable ? (
-                        <span className="status-indicator has-table" title="Has Loot Table">●</span>
-                      ) : (
-                        <span className="status-indicator no-table" title="No Loot Table">○</span>
-                      )}
+                      <span className={`status-indicator ${locationStatus.className}`} title={locationStatus.text}>
+                        {locationStatus.status === 'ready' ? '●' : locationStatus.status === 'empty' ? '●' : '⚠'}
+                      </span>
                     </td>
                   </tr>
                 );

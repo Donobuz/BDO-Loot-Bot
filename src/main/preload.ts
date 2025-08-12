@@ -68,5 +68,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (userId: string, preferences: any) => ipcRenderer.invoke('user-preferences:update', userId, preferences),
     create: (userId: string, preferences: any) => ipcRenderer.invoke('user-preferences:create', userId, preferences),
     getOrCreate: (userId: string, defaultPreferences?: any) => ipcRenderer.invoke('user-preferences:get-or-create', userId, defaultPreferences),
+  },
+
+  selectOCRRegion: () => ipcRenderer.invoke('select-ocr-region'),
+
+  openStreamingOverlay: (data: any) => ipcRenderer.invoke('open-streaming-overlay', data),
+  updateStreamingOverlay: (data: any) => ipcRenderer.invoke('update-streaming-overlay', data),
+
+  onOverlayData: (callback: (data: any) => void) => {
+    ipcRenderer.on('overlay-data', (event, data) => callback(data));
+  },
+
+  onStreamingOverlayClosed: (callback: () => void) => {
+    ipcRenderer.on('streaming-overlay-closed', () => callback());
   }
 });
