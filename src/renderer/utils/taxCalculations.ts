@@ -54,7 +54,8 @@ export function calculatePostTaxValue(
     finalAmount += postTaxBase * familyFameBonus;
   }
 
-  return Math.floor(finalAmount);
+  // Round the final result to match BDO's behavior
+  return Math.round(finalAmount);
 }
 
 /**
@@ -125,5 +126,5 @@ export function formatTaxRate(rate: number): string {
  * Format silver value with commas
  */
 export function formatSilverValue(value: number): string {
-  return Math.floor(value).toLocaleString();
+  return Math.round(value).toLocaleString();
 }
