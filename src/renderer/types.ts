@@ -266,6 +266,12 @@ export interface User {
   updated: string;
 }
 
+export interface TaxCalculations {
+  value_pack: boolean;
+  rich_merchant_ring: boolean;
+  family_fame: number;
+}
+
 export interface UserPreferences {
   user_id: string;
   preferred_region: string; // Default region for loot tables
@@ -277,6 +283,7 @@ export interface UserPreferences {
     height: number;
     display?: string;
   } | null; // OCR region for loot detection
+  tax_calculations?: TaxCalculations | null; // Tax calculation settings
   created: string;
   updated: string;
 }

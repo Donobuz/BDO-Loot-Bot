@@ -548,6 +548,90 @@
   transform: none;
 }
 
+/* Tax calculation settings */
+.tax-settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.tax-checkboxes {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.tax-checkboxes .checkbox-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+.family-fame-input {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+}
+
+.input-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+.input-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
+.input-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.input-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.fame-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color, #40444b);
+  border-radius: 8px;
+  background: #ffffff !important; /* Force white background */
+  color: #000000 !important; /* Force black text */
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-height: 40px;
+}
+
+.fame-input:focus {
+  outline: none;
+  border-color: var(--accent-color, #5865f2);
+  box-shadow: 0 0 0 3px rgba(114, 137, 218, 0.1);
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.fame-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5 !important;
+  color: #666666 !important;
+}
+
+.fame-input::placeholder {
+  color: #999999 !important;
+  font-weight: normal;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .user-settings-modal {
@@ -577,5 +661,33 @@
 
   .ocr-region-buttons {
     flex-direction: column;
+  }
+
+  .tax-checkboxes {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .tax-checkboxes .checkbox-item {
+    min-width: unset;
+  }
+
+  .family-fame-input {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .input-label {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .input-info {
+    min-width: unset;
+  }
+
+  .fame-input {
+    max-width: 100%;
   }
 }

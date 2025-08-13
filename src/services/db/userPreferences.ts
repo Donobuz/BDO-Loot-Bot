@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { UserPreferences } from './types';
+import { UserPreferences, TaxCalculations } from './types';
 
 export class UserPreferencesService extends BaseDatabase {
   constructor() {
@@ -29,6 +29,7 @@ export class UserPreferencesService extends BaseDatabase {
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
         designated_ocr_region: data.designated_ocr_region,
+        tax_calculations: data.tax_calculations,
         created: data.created,
         updated: data.updated
       };
@@ -51,7 +52,8 @@ export class UserPreferencesService extends BaseDatabase {
           user_id: userId,
           preferred_region: preferences.preferred_region || 'NA',
           display_regions: preferences.display_regions || ['NA'],
-          designated_ocr_region: preferences.designated_ocr_region || null
+          designated_ocr_region: preferences.designated_ocr_region || null,
+          tax_calculations: preferences.tax_calculations || null
         })
         .select()
         .single();
@@ -65,6 +67,7 @@ export class UserPreferencesService extends BaseDatabase {
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
         designated_ocr_region: data.designated_ocr_region,
+        tax_calculations: data.tax_calculations,
         created: data.created,
         updated: data.updated
       };
@@ -95,6 +98,10 @@ export class UserPreferencesService extends BaseDatabase {
         updates.designated_ocr_region = preferences.designated_ocr_region;
       }
 
+      if (preferences.tax_calculations !== undefined) {
+        updates.tax_calculations = preferences.tax_calculations;
+      }
+
       if (Object.keys(updates).length === 0) {
         return { success: false, error: 'No valid updates provided' };
       }
@@ -118,6 +125,7 @@ export class UserPreferencesService extends BaseDatabase {
         preferred_region: data.preferred_region,
         display_regions: data.display_regions,
         designated_ocr_region: data.designated_ocr_region,
+        tax_calculations: data.tax_calculations,
         created: data.created,
         updated: data.updated
       };

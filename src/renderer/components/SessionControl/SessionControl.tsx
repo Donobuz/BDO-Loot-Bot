@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { UserPreferences, Location, Item, LootTable } from "../../types";
+import { UserPreferences, Location, Item, LootTable, TaxCalculations } from "../../types";
 import { useModal } from "../../contexts/ModalContext";
+import { TAX_CONSTANTS } from "../../constants/taxes";
+import { calculatePostTaxValue } from "../../utils/taxCalculations";
 import "./SessionControl.css";
 
 interface SessionControlProps {
@@ -39,6 +41,16 @@ export const SessionControl: React.FC<SessionControlProps> = ({
   const [isOverlayFocused, setIsOverlayFocused] = useState(false);
   const [streamingOverlayOpen, setStreamingOverlayOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Tax calculation state (local state, not saved until session starts)
+  const [taxSettings, setTaxSettings] = useState<TaxCalculations>({
+    value_pack: userPreferences.tax_calculations?.value_pack ?? false,
+    rich_merchant_ring: userPreferences.tax_calculations?.rich_merchant_ring ?? false,
+    family_fame: userPreferences.tax_calculations?.family_fame ?? 0,
+  });
+  
+  // Tax breakdown accordion state
+  const [showTaxBreakdown, setShowTaxBreakdown] = useState(false);
 
   // Modal context for refresh warning
   const { showModal, hideModal } = useModal();
@@ -47,6 +59,17 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     userPreferences.designated_ocr_region &&
     userPreferences.designated_ocr_region.width > 0 &&
     userPreferences.designated_ocr_region.height > 0;
+
+  // Handle tax setting changes (local only, not saved to database)
+  const handleTaxSettingChange = (
+    field: keyof TaxCalculations,
+    value: boolean | number
+  ) => {
+    const newTaxSettings = { ...taxSettings, [field]: value };
+    setTaxSettings(newTaxSettings);
+    // Note: We don't recalculate item prices here since the loot table should show raw values
+    // Tax calculations are only applied during active sessions
+  };
 
   // Event handlers for overlay lifecycle
   const handleOverlayOpened = () => {
@@ -94,7 +117,16 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     loadLocations();
   }, []);
 
-  // Load loot table items when location is selected
+  // Update tax settings when user preferences change (reset to saved values)
+  useEffect(() => {
+    setTaxSettings({
+      value_pack: userPreferences.tax_calculations?.value_pack ?? false,
+      rich_merchant_ring: userPreferences.tax_calculations?.rich_merchant_ring ?? false,
+      family_fame: userPreferences.tax_calculations?.family_fame ?? 0,
+    });
+  }, [userPreferences.tax_calculations]);
+
+  // Load loot table items when location is selected (tax settings handled in handleTaxSettingChange)
   useEffect(() => {
     if (selectedLocation) {
       loadLootTableItems(selectedLocation.id);
@@ -200,7 +232,10 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         location: session.location,
         items: lootTableItems,
         itemCounts: Object.fromEntries(session.itemCounts),
-        sessionStartTime: session.startTime?.toISOString()
+        sessionStartTime: session.startTime?.toISOString(),
+        grossValue: calculateGrossValue(),
+        postTaxValue: calculateTotalValue(),
+        taxBreakdown: getTaxBreakdown()
       };
       
       // Update overlay directly
@@ -276,11 +311,11 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         return;
       }
 
-      // Filter items that are in this loot table and calculate prices
+      // Filter items that are in this loot table and calculate prices (without tax)
       const allItems = itemsResult.data || [];
       const lootItems = allItems
         .filter((item) => lootTable.item_ids.includes(item.id))
-        .map((item) => calculateItemPrice(item, allItems))
+        .map((item) => calculateItemPrice(item, allItems, false)) // false = don't apply tax calculations
         .filter((item) => item !== null) as ItemWithPrice[];
 
       setLootTableItems(lootItems);
@@ -292,7 +327,8 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
   const calculateItemPrice = (
     item: Item,
-    allItems: Item[]
+    allItems: Item[],
+    applyTaxCalculations: boolean = false
   ): ItemWithPrice | null => {
     let calculatedPrice = 0;
     const userRegion = userPreferences.preferred_region;
@@ -306,22 +342,36 @@ export const SessionControl: React.FC<SessionControlProps> = ({
           i.type === "marketplace"
       );
 
+      let preTaxPrice = 0;
       if (regionItem) {
         // COALESCE(last_sold_price, base_price) for the user's region
-        calculatedPrice = regionItem.last_sold_price || regionItem.base_price;
+        preTaxPrice = regionItem.last_sold_price || regionItem.base_price;
       } else {
         // Fallback to the current item if no region-specific item found
-        calculatedPrice = item.last_sold_price || item.base_price;
+        preTaxPrice = item.last_sold_price || item.base_price;
+      }
+
+      if (applyTaxCalculations) {
+        // Apply tax calculations for marketplace items
+        calculatedPrice = calculatePostTaxValue(
+          preTaxPrice,
+          taxSettings.value_pack,
+          taxSettings.rich_merchant_ring,
+          taxSettings.family_fame
+        );
+      } else {
+        // Use raw pre-tax price
+        calculatedPrice = preTaxPrice;
       }
     } else if (item.type === "trash_loot") {
-      // base_price for trash loot (region-independent)
+      // base_price for trash loot (region-independent, no tax)
       calculatedPrice = item.base_price;
     } else if (
       item.type === "conversion" &&
       item.convertible_to_bdo_item_id &&
       item.conversion_ratio
     ) {
-      // Find the target item in the user's preferred region
+      // Find the target marketplace item in the user's preferred region
       const targetItem = allItems.find(
         (i) =>
           i.bdo_item_id === item.convertible_to_bdo_item_id &&
@@ -330,17 +380,46 @@ export const SessionControl: React.FC<SessionControlProps> = ({
       );
 
       if (targetItem) {
-        const targetPrice = targetItem.last_sold_price || targetItem.base_price;
-        calculatedPrice = targetPrice / item.conversion_ratio;
+        const targetPreTaxPrice = targetItem.last_sold_price || targetItem.base_price;
+        
+        if (applyTaxCalculations) {
+          // Calculate the post-tax value of the target marketplace item
+          const targetPostTaxPrice = calculatePostTaxValue(
+            targetPreTaxPrice,
+            taxSettings.value_pack,
+            taxSettings.rich_merchant_ring,
+            taxSettings.family_fame
+          );
+          
+          // Use the post-tax price divided by conversion ratio
+          calculatedPrice = targetPostTaxPrice / item.conversion_ratio;
+        } else {
+          // Use the raw pre-tax price divided by conversion ratio
+          calculatedPrice = targetPreTaxPrice / item.conversion_ratio;
+        }
       } else {
         // Fallback: try to find any item with the convertible_to_bdo_item_id
         const fallbackItem = allItems.find(
           (i) => i.bdo_item_id === item.convertible_to_bdo_item_id
         );
         if (fallbackItem) {
-          const targetPrice =
-            fallbackItem.last_sold_price || fallbackItem.base_price;
-          calculatedPrice = targetPrice / item.conversion_ratio;
+          const targetPreTaxPrice = fallbackItem.last_sold_price || fallbackItem.base_price;
+          
+          if (applyTaxCalculations) {
+            // Calculate the post-tax value of the target marketplace item
+            const targetPostTaxPrice = calculatePostTaxValue(
+              targetPreTaxPrice,
+              taxSettings.value_pack,
+              taxSettings.rich_merchant_ring,
+              taxSettings.family_fame
+            );
+            
+            // Use the post-tax price divided by conversion ratio
+            calculatedPrice = targetPostTaxPrice / item.conversion_ratio;
+          } else {
+            // Use the raw pre-tax price divided by conversion ratio
+            calculatedPrice = targetPreTaxPrice / item.conversion_ratio;
+          }
         } else {
           return null; // Skip if target item not found
         }
@@ -349,7 +428,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
     return {
       ...item,
-      calculatedPrice,
+      calculatedPrice: Math.round(calculatedPrice),
     };
   };
 
@@ -360,6 +439,17 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     }
 
     try {
+      // Save tax settings to database when starting session
+      const result = await window.electronAPI.userPreferences.update(
+        userPreferences.user_id,
+        { tax_calculations: taxSettings }
+      );
+      
+      if (!result.success) {
+        console.error("Failed to save tax settings:", result.error);
+        // Continue with session start even if tax settings failed to save
+      }
+
       const newSession = {
         isActive: true,
         startTime: new Date(),
@@ -401,7 +491,10 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         location: session.location || selectedLocation || undefined, // Use selectedLocation if session hasn't started
         items: lootTableItems,
         itemCounts: Object.fromEntries(session.itemCounts),
-        sessionStartTime: session.startTime?.toISOString() || new Date().toISOString()
+        sessionStartTime: session.startTime?.toISOString() || new Date().toISOString(),
+        grossValue: session.isActive ? calculateGrossValue() : 0,
+        postTaxValue: session.isActive ? calculateTotalValue() : 0,
+        taxBreakdown: session.isActive ? getTaxBreakdown() : null
       };
       
       const result = await window.electronAPI.openStreamingOverlay(overlayData);
@@ -421,9 +514,160 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     let totalValue = 0;
     lootTableItems.forEach(item => {
       const count = session.itemCounts.get(item.id) || 0;
-      totalValue += count * item.calculatedPrice;
+      
+      // During active session, calculate the post-tax price for each item
+      let postTaxPrice = 0;
+      
+      if (item.type === "marketplace") {
+        // Use the raw price from calculatedPrice and apply tax
+        const preTaxPrice = item.calculatedPrice; // This is the raw price since we loaded with applyTaxCalculations=false
+        postTaxPrice = calculatePostTaxValue(
+          preTaxPrice,
+          taxSettings.value_pack,
+          taxSettings.rich_merchant_ring,
+          taxSettings.family_fame
+        );
+      } else if (item.type === "trash_loot") {
+        // Trash loot is not taxed, use calculatedPrice directly
+        postTaxPrice = item.calculatedPrice;
+      } else if (item.type === "conversion" && item.convertible_to_bdo_item_id && item.conversion_ratio) {
+        // For conversion items, the calculatedPrice is already the raw conversion value
+        // We need to apply tax to the target marketplace item and then divide by conversion ratio
+        const userRegion = userPreferences.preferred_region;
+        const targetItem = lootTableItems.find(i => 
+          i.bdo_item_id === item.convertible_to_bdo_item_id && 
+          i.region === userRegion && 
+          i.type === "marketplace"
+        );
+        
+        if (targetItem) {
+          // Use the target item's raw price and apply tax
+          const targetPostTaxPrice = calculatePostTaxValue(
+            targetItem.calculatedPrice, // Raw price of target marketplace item
+            taxSettings.value_pack,
+            taxSettings.rich_merchant_ring,
+            taxSettings.family_fame
+          );
+          postTaxPrice = targetPostTaxPrice / item.conversion_ratio;
+        } else {
+          // Fallback: use the conversion item's calculated price (raw) and apply estimated tax
+          const rawConversionPrice = item.calculatedPrice;
+          // Estimate the marketplace price this conversion represents
+          const estimatedMarketplacePrice = rawConversionPrice * item.conversion_ratio;
+          const taxedMarketplacePrice = calculatePostTaxValue(
+            estimatedMarketplacePrice,
+            taxSettings.value_pack,
+            taxSettings.rich_merchant_ring,
+            taxSettings.family_fame
+          );
+          postTaxPrice = taxedMarketplacePrice / item.conversion_ratio;
+        }
+      }
+      
+      totalValue += count * Math.round(postTaxPrice);
     });
     return totalValue;
+  };
+
+  const calculateGrossValue = (): number => {
+    let grossValue = 0;
+    
+    lootTableItems.forEach(item => {
+      const count = session.itemCounts.get(item.id) || 0;
+      // Use the raw calculatedPrice since it was loaded with applyTaxCalculations=false
+      const preTaxPrice = item.calculatedPrice;
+      grossValue += count * preTaxPrice;
+    });
+    
+    return grossValue;
+  };
+
+  const getTaxBreakdown = () => {
+    const userRegion = userPreferences.preferred_region;
+    let taxableGrossValue = 0;
+    let taxablePostTaxValue = 0;
+    let nonTaxableValue = 0;
+    
+    // Calculate taxable and non-taxable values separately
+    lootTableItems.forEach(item => {
+      const count = session.itemCounts.get(item.id) || 0;
+      
+      if (item.type === "trash_loot") {
+        // Trash loot is not taxed - use calculatedPrice directly
+        nonTaxableValue += count * item.calculatedPrice;
+      } else if (item.type === "marketplace") {
+        // Marketplace items are taxed - use calculatedPrice as pre-tax value
+        const preTaxPrice = item.calculatedPrice;
+        const postTaxPrice = calculatePostTaxValue(
+          preTaxPrice,
+          taxSettings.value_pack,
+          taxSettings.rich_merchant_ring,
+          taxSettings.family_fame
+        );
+        taxableGrossValue += count * preTaxPrice;
+        taxablePostTaxValue += count * postTaxPrice;
+      } else if (item.type === "conversion" && item.convertible_to_bdo_item_id && item.conversion_ratio) {
+        // Conversion items use the post-tax value of their target marketplace item
+        const targetItem = lootTableItems.find(i => 
+          i.bdo_item_id === item.convertible_to_bdo_item_id && 
+          i.region === userRegion && 
+          i.type === "marketplace"
+        );
+        
+        if (targetItem) {
+          // Use the target item's calculatedPrice as the pre-tax marketplace price
+          const targetPreTaxPrice = targetItem.calculatedPrice;
+          const targetPostTaxPrice = calculatePostTaxValue(
+            targetPreTaxPrice,
+            taxSettings.value_pack,
+            taxSettings.rich_merchant_ring,
+            taxSettings.family_fame
+          );
+          
+          const conversionPreTaxPrice = targetPreTaxPrice / item.conversion_ratio;
+          const conversionPostTaxPrice = targetPostTaxPrice / item.conversion_ratio;
+          
+          taxableGrossValue += count * conversionPreTaxPrice;
+          taxablePostTaxValue += count * conversionPostTaxPrice;
+        } else {
+          // Fallback: use the conversion item's calculatedPrice
+          const conversionPreTaxPrice = item.calculatedPrice;
+          
+          // Estimate the marketplace price this represents and apply tax
+          const estimatedMarketplacePrice = conversionPreTaxPrice * item.conversion_ratio;
+          const taxedMarketplacePrice = calculatePostTaxValue(
+            estimatedMarketplacePrice,
+            taxSettings.value_pack,
+            taxSettings.rich_merchant_ring,
+            taxSettings.family_fame
+          );
+          const conversionPostTaxPrice = taxedMarketplacePrice / item.conversion_ratio;
+          
+          taxableGrossValue += count * conversionPreTaxPrice;
+          taxablePostTaxValue += count * conversionPostTaxPrice;
+        }
+      }
+    });
+    
+    const totalGrossValue = taxableGrossValue + nonTaxableValue;
+    const totalPostTaxValue = taxablePostTaxValue + nonTaxableValue;
+    const taxAmount = taxableGrossValue - taxablePostTaxValue;
+    const effectiveTaxRate = taxableGrossValue > 0 ? (taxAmount / taxableGrossValue) * 100 : 0;
+    
+    return {
+      grossValue: totalGrossValue,
+      postTaxValue: totalPostTaxValue,
+      taxableGrossValue,
+      taxablePostTaxValue,
+      nonTaxableValue,
+      taxAmount,
+      effectiveTaxRate,
+      bonuses: {
+        valuePack: taxSettings.value_pack,
+        richMerchantRing: taxSettings.rich_merchant_ring,
+        familyFame: taxSettings.family_fame
+      }
+    };
   };
 
   const formatSessionDuration = (startTime: Date): string => {
@@ -471,22 +715,168 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
         <div className='session-stats'>
           <div className='stat'>
-            <span className='stat-label'>Total Value:</span>
-            <span className='stat-value'>{calculateTotalValue().toLocaleString()} silver</span>
+            <span className='stat-label'>Gross Value (Pre-Tax):</span>
+            <span className='stat-value'>{calculateGrossValue().toLocaleString()} silver</span>
           </div>
-          <div className='stat'>
+          <div className='stat' style={{ textAlign: 'right' }}>
             <span className='stat-label'>Location:</span>
             <span className='stat-value'>{session.location?.name}</span>
           </div>
-        </div>
-
-        {!streamingOverlayOpen && (
+          <div className='stat tax-breakdown-stat'>
+            <div className='tax-stat-header' onClick={() => setShowTaxBreakdown(!showTaxBreakdown)}>
+              <span className='stat-label'>Post-Tax Value:</span>
+              <span className='stat-value'>{calculateTotalValue().toLocaleString()} silver</span>
+              <span className={`tax-accordion-icon ${showTaxBreakdown ? 'expanded' : ''}`}>
+                ▼
+              </span>
+            </div>
+            {showTaxBreakdown && (
+              <div className='tax-breakdown-details'>
+                {(() => {
+                  const breakdown = getTaxBreakdown();
+                  return (
+                    <>
+                      <div className='breakdown-row'>
+                        <span className='breakdown-label'>Total Gross Value:</span>
+                        <span className='breakdown-value'>{breakdown.grossValue.toLocaleString()} silver</span>
+                      </div>
+                      
+                      {breakdown.nonTaxableValue > 0 && (
+                        <div className='breakdown-row non-taxable'>
+                          <span className='breakdown-label'>└ Trash Loot (Tax-Free):</span>
+                          <span className='breakdown-value'>{breakdown.nonTaxableValue.toLocaleString()} silver</span>
+                        </div>
+                      )}
+                      
+                      {breakdown.taxableGrossValue > 0 && (
+                        <>
+                          <div className='breakdown-row taxable'>
+                            <span className='breakdown-label'>└ Marketplace & Conversion Items (Pre-Tax):</span>
+                            <span className='breakdown-value'>{breakdown.taxableGrossValue.toLocaleString()} silver</span>
+                          </div>
+                          <div className='breakdown-row tax-deduction'>
+                            <span className='breakdown-label'>  Base Tax (35%):</span>
+                            <span className='breakdown-value'>-{(breakdown.taxableGrossValue * 0.35).toLocaleString()} silver</span>
+                          </div>
+                          <div className='breakdown-row base-after-tax'>
+                            <span className='breakdown-label'>  After Base Tax:</span>
+                            <span className='breakdown-value'>{(breakdown.taxableGrossValue * 0.65).toLocaleString()} silver</span>
+                          </div>
+                          {breakdown.bonuses.valuePack && (
+                            <div className='breakdown-row bonus'>
+                              <span className='breakdown-label'>  Value Pack (+30%):</span>
+                              <span className='breakdown-value'>+{(breakdown.taxableGrossValue * 0.65 * 0.30).toLocaleString()} silver</span>
+                            </div>
+                          )}
+                          {breakdown.bonuses.richMerchantRing && (
+                            <div className='breakdown-row bonus'>
+                              <span className='breakdown-label'>  Rich Merchant Ring (+5%):</span>
+                              <span className='breakdown-value'>+{(breakdown.taxableGrossValue * 0.65 * 0.05).toLocaleString()} silver</span>
+                            </div>
+                          )}
+                          {breakdown.bonuses.familyFame > 0 && (
+                            <div className='breakdown-row bonus'>
+                              <span className='breakdown-label'>  Family Fame ({breakdown.bonuses.familyFame.toLocaleString()}):</span>
+                              <span className='breakdown-value'>+{(() => {
+                                // Family Fame bonus is applied to the base post-tax amount (not after other bonuses)
+                                const basePostTax = breakdown.taxableGrossValue * 0.65;
+                                const familyFameBonus = basePostTax * (breakdown.bonuses.familyFame >= 7000 ? 0.015 : breakdown.bonuses.familyFame >= 4000 ? 0.01 : breakdown.bonuses.familyFame >= 1000 ? 0.005 : 0);
+                                return familyFameBonus.toLocaleString();
+                              })()} silver</span>
+                            </div>
+                          )}
+                          <div className='breakdown-row taxable-subtotal'>
+                            <span className='breakdown-label'>  Marketplace & Conversion Subtotal:</span>
+                            <span className='breakdown-value'>{breakdown.taxablePostTaxValue.toLocaleString()} silver</span>
+                          </div>
+                        </>
+                      )}
+                      
+                      {(breakdown.nonTaxableValue > 0 && breakdown.taxableGrossValue > 0) && (
+                        <div className='breakdown-divider'></div>
+                      )}
+                      
+                      {breakdown.grossValue > 0 && (
+                        <>
+                          <div className='breakdown-row final-total'>
+                            <span className='breakdown-label'>Final Total:</span>
+                            <span className='breakdown-value'>{breakdown.postTaxValue.toLocaleString()} silver</span>
+                          </div>
+                          {breakdown.taxableGrossValue > 0 && (
+                            <div className='breakdown-row effective-rate'>
+                              <span className='breakdown-label'>Tax Savings on Taxable Items:</span>
+                              <span className='breakdown-value'>{(65 - breakdown.effectiveTaxRate).toFixed(1)}%</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      
+                      {breakdown.grossValue === 0 && (
+                        <div className='breakdown-row'>
+                          <span className='breakdown-label'>No loot collected yet</span>
+                          <span className='breakdown-value'>0 silver</span>
+                        </div>
+                      )}
+                    </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>        {!streamingOverlayOpen && (
           <div className='active-loot-items'>
             <h4>Loot</h4>
             <div className='active-items-grid'>
             {lootTableItems.map(item => {
               const count = session.itemCounts.get(item.id) || 0;
-              const totalValue = count * item.calculatedPrice;
+              
+              // Calculate post-tax price for active session display
+              let postTaxPrice = 0;
+              
+              if (item.type === "marketplace") {
+                // Use calculatedPrice as the raw price and apply tax
+                const preTaxPrice = item.calculatedPrice;
+                postTaxPrice = calculatePostTaxValue(
+                  preTaxPrice,
+                  taxSettings.value_pack,
+                  taxSettings.rich_merchant_ring,
+                  taxSettings.family_fame
+                );
+              } else if (item.type === "trash_loot") {
+                // Trash loot is not taxed
+                postTaxPrice = item.calculatedPrice;
+              } else if (item.type === "conversion" && item.convertible_to_bdo_item_id && item.conversion_ratio) {
+                const userRegion = userPreferences.preferred_region;
+                const targetItem = lootTableItems.find(i => 
+                  i.bdo_item_id === item.convertible_to_bdo_item_id && 
+                  i.region === userRegion && 
+                  i.type === "marketplace"
+                );
+                
+                if (targetItem) {
+                  // Use target item's calculatedPrice as raw price and apply tax
+                  const targetPostTaxPrice = calculatePostTaxValue(
+                    targetItem.calculatedPrice,
+                    taxSettings.value_pack,
+                    taxSettings.rich_merchant_ring,
+                    taxSettings.family_fame
+                  );
+                  postTaxPrice = targetPostTaxPrice / item.conversion_ratio;
+                } else {
+                  // Fallback: estimate tax on the conversion item
+                  const rawConversionPrice = item.calculatedPrice;
+                  const estimatedMarketplacePrice = rawConversionPrice * item.conversion_ratio;
+                  const taxedMarketplacePrice = calculatePostTaxValue(
+                    estimatedMarketplacePrice,
+                    taxSettings.value_pack,
+                    taxSettings.rich_merchant_ring,
+                    taxSettings.family_fame
+                  );
+                  postTaxPrice = taxedMarketplacePrice / item.conversion_ratio;
+                }
+              }
+              
+              const totalValue = count * Math.round(postTaxPrice);
               
               return (
                 <div key={item.id} className='active-loot-item'>
@@ -533,7 +923,12 @@ export const SessionControl: React.FC<SessionControlProps> = ({
           {/* Test button for item detection */}
           {lootTableItems.length > 0 && (
             <button 
-              onClick={() => handleItemDetected(null, { itemName: lootTableItems[0].name, itemId: lootTableItems[0].id })}
+              onClick={() => {
+                // Randomly select an item from the loot table
+                const randomIndex = Math.floor(Math.random() * lootTableItems.length);
+                const randomItem = lootTableItems[randomIndex];
+                handleItemDetected(null, { itemName: randomItem.name, itemId: randomItem.id });
+              }}
               className='test-item-button'
               style={{ 
                 background: '#28a745', 
@@ -544,7 +939,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                 fontSize: '12px'
               }}
             >
-              🧪 Test Item Detection
+              🧪 Test Random Item
             </button>
           )}
         </div>
@@ -595,61 +990,131 @@ export const SessionControl: React.FC<SessionControlProps> = ({
           </div>
 
           {selectedLocation && (
-            <div className='loot-items-section'>
-              <h4>Loot Table</h4>
-              {lootTableItems.length === 0 ? (
-                <p className='no-items'>
-                  No items configured for this location.
+            <>
+              {/* Tax Settings - Above loot table */}
+              <div className='tax-settings-section'>
+                <h5>Tax Calculations</h5>
+                <div className='tax-settings-grid'>
+                  <div className='tax-setting-item'>
+                    <label className='tax-checkbox-label'>
+                      <input
+                        type='checkbox'
+                        checked={taxSettings.value_pack}
+                        onChange={(e) =>
+                          handleTaxSettingChange('value_pack', e.target.checked)
+                        }
+                        className='tax-checkbox'
+                      />
+                      <span className='tax-setting-text'>
+                        Value Pack (+30%)
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className='tax-setting-item'>
+                    <label className='tax-checkbox-label'>
+                      <input
+                        type='checkbox'
+                        checked={taxSettings.rich_merchant_ring}
+                        onChange={(e) =>
+                          handleTaxSettingChange('rich_merchant_ring', e.target.checked)
+                        }
+                        className='tax-checkbox'
+                      />
+                      <span className='tax-setting-text'>
+                        Rich Merchant Ring (+5%)
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className='tax-setting-item family-fame-item'>
+                    <label className='tax-fame-label'>
+                      <span className='tax-setting-text'>Family Fame:</span>
+                      <input
+                        type='number'
+                        min='0'
+                        max={TAX_CONSTANTS.MAX_FAMILY_FAME}
+                        value={taxSettings.family_fame}
+                        onChange={(e) => {
+                          let value = parseInt(e.target.value) || 0;
+                          if (value > TAX_CONSTANTS.MAX_FAMILY_FAME) {
+                            value = TAX_CONSTANTS.MAX_FAMILY_FAME;
+                          }
+                          handleTaxSettingChange('family_fame', value);
+                        }}
+                        className='tax-fame-input'
+                        placeholder='0'
+                      />
+                    </label>
+                  </div>
+                </div>
+                <p style={{ 
+                  margin: '8px 0 0 0', 
+                  fontSize: '0.75rem', 
+                  color: 'var(--text-secondary)', 
+                  fontStyle: 'italic',
+                  textAlign: 'center'
+                }}>
+                  💡 Settings will be saved when you start the session
                 </p>
-              ) : (
-                <div className='loot-items-compact'>
-                  {lootTableItems.map((item) => (
-                    <div key={item.id} className='loot-item-compact'>
-                      <div className='item-image-container'>
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className='item-image'
-                          />
-                        ) : (
-                          <div className='item-image-placeholder'>📦</div>
-                        )}
-                      </div>
-                      <div className='item-details'>
-                        <span className='item-name' title={item.name}>
-                          {item.name}
-                        </span>
-                        <div className='item-price-container'>
-                          <input
-                            type='text'
-                            value={item.calculatedPrice.toString()}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Allow only numbers and decimal point
-                              if (/^\d*\.?\d*$/.test(value) || value === "") {
-                                const newPrice = parseFloat(value) || 0;
-                                setLootTableItems((prev) =>
-                                  prev.map((i) =>
-                                    i.id === item.id
-                                      ? { ...i, calculatedPrice: newPrice }
-                                      : i
-                                  )
-                                );
-                              }
-                            }}
-                            className='price-input-compact'
-                            title={`Price for ${item.name}`}
-                            placeholder='0'
-                          />
-                          <span className='currency-compact'>silver</span>
+              </div>
+
+              <div className='loot-items-section'>
+                <h4>Loot Table</h4>
+                {lootTableItems.length === 0 ? (
+                  <p className='no-items'>
+                    No items configured for this location.
+                  </p>
+                ) : (
+                  <div className='loot-items-compact'>
+                    {lootTableItems.map((item) => (
+                      <div key={item.id} className='loot-item-compact'>
+                        <div className='item-image-container'>
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className='item-image'
+                            />
+                          ) : (
+                            <div className='item-image-placeholder'>📦</div>
+                          )}
+                        </div>
+                        <div className='item-details'>
+                          <span className='item-name' title={item.name}>
+                            {item.name}
+                          </span>
+                          <div className='item-price-container'>
+                            <input
+                              type='text'
+                              value={item.calculatedPrice.toString()}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow only numbers and decimal point
+                                if (/^\d*\.?\d*$/.test(value) || value === "") {
+                                  const newPrice = parseFloat(value) || 0;
+                                  setLootTableItems((prev) =>
+                                    prev.map((i) =>
+                                      i.id === item.id
+                                        ? { ...i, calculatedPrice: newPrice }
+                                        : i
+                                    )
+                                  );
+                                }
+                              }}
+                              className='price-input-compact'
+                              title={`Price for ${item.name}`}
+                              placeholder='0'
+                            />
+                            <span className='currency-compact'>silver</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           <div className='session-actions'>

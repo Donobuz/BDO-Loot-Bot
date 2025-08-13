@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UserPreferences } from '../../types';
+import { UserPreferences, TaxCalculations } from '../../types';
 import { BDO_REGIONS } from '../../constants/regions';
+import { TAX_CONSTANTS } from '../../constants/taxes';
+import { formatTaxRate } from '../../utils/taxCalculations';
 import './UserSettingsModal.css';
 
 interface OCRRegion {
@@ -33,6 +35,11 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
   const [ocrRegion, setOcrRegion] = useState<OCRRegion | null>(
     currentPreferences.designated_ocr_region || null
   );
+  const [taxCalculations, setTaxCalculations] = useState<TaxCalculations>({
+    value_pack: currentPreferences.tax_calculations?.value_pack || false,
+    rich_merchant_ring: currentPreferences.tax_calculations?.rich_merchant_ring || false,
+    family_fame: currentPreferences.tax_calculations?.family_fame || 0
+  });
   const [saving, setSaving] = useState(false);
   const [selectingRegion, setSelectingRegion] = useState(false);
 
@@ -41,6 +48,11 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setPreferredRegion(currentPreferences.preferred_region);
     setDisplayRegions(currentPreferences.display_regions);
     setOcrRegion(currentPreferences.designated_ocr_region || null);
+    setTaxCalculations({
+      value_pack: currentPreferences.tax_calculations?.value_pack || false,
+      rich_merchant_ring: currentPreferences.tax_calculations?.rich_merchant_ring || false,
+      family_fame: currentPreferences.tax_calculations?.family_fame || 0
+    });
   }, [currentPreferences]);
 
   // Prevent body scroll when modal is open
@@ -144,6 +156,26 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setOcrRegion(null);
   };
 
+  const handleTaxCalculationChange = (field: keyof TaxCalculations, value: boolean | number) => {
+    setTaxCalculations(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleFamilyFameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      let numValue = value === '' ? 0 : parseInt(value, 10);
+      // Cap at maximum family fame value
+      if (numValue > TAX_CONSTANTS.MAX_FAMILY_FAME) {
+        numValue = TAX_CONSTANTS.MAX_FAMILY_FAME;
+      }
+      handleTaxCalculationChange('family_fame', numValue);
+    }
+  };
+
   const formatRegionDisplay = (region: OCRRegion | null): string => {
     if (!region) {
       return 'No region selected - click "Select Region" to choose an area of your screen for loot detection';
@@ -166,7 +198,8 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       await onSave({
         preferred_region: preferredRegion,
         display_regions: finalDisplayRegions,
-        designated_ocr_region: ocrRegion
+        designated_ocr_region: ocrRegion,
+        tax_calculations: taxCalculations
       });
       
       onClose();
@@ -182,6 +215,11 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     setPreferredRegion(currentPreferences.preferred_region);
     setDisplayRegions(currentPreferences.display_regions);
     setOcrRegion(currentPreferences.designated_ocr_region || null);
+    setTaxCalculations({
+      value_pack: currentPreferences.tax_calculations?.value_pack || false,
+      rich_merchant_ring: currentPreferences.tax_calculations?.rich_merchant_ring || false,
+      family_fame: currentPreferences.tax_calculations?.family_fame || 0
+    });
     onClose();
   };
 
@@ -267,6 +305,65 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                     </span>
                   </label>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Modern HR separator */}
+          <div className="settings-separator">
+            <hr />
+          </div>
+
+          <div className="settings-section">
+            <h3>Tax Calculations</h3>
+            <p className="setting-description">
+              Configure your marketplace tax modifiers for accurate post-tax value calculations.
+            </p>
+            
+            <div className="tax-settings-grid">
+              <div className="tax-checkboxes">
+                <label className="checkbox-item modern-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={taxCalculations.value_pack}
+                    onChange={(e) => handleTaxCalculationChange('value_pack', e.target.checked)}
+                    disabled={isLoading || saving}
+                  />
+                  <span className="checkbox-text">
+                    <span className="checkbox-label">Value Pack</span>
+                    <span className="checkbox-sublabel">{formatTaxRate(TAX_CONSTANTS.VALUE_PACK_BONUS)} bonus on post-tax amount</span>
+                  </span>
+                </label>
+
+                <label className="checkbox-item modern-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={taxCalculations.rich_merchant_ring}
+                    onChange={(e) => handleTaxCalculationChange('rich_merchant_ring', e.target.checked)}
+                    disabled={isLoading || saving}
+                  />
+                  <span className="checkbox-text">
+                    <span className="checkbox-label">Rich Merchant Ring</span>
+                    <span className="checkbox-sublabel">{formatTaxRate(TAX_CONSTANTS.RICH_MERCHANT_RING_BONUS)} bonus on post-tax amount</span>
+                  </span>
+                </label>
+              </div>
+
+              <div className="family-fame-input">
+                <label className="input-label">
+                  <div className="input-info">
+                    <span className="input-title">Family Fame</span>
+                    <span className="input-description">Trading fame value (0-{TAX_CONSTANTS.MAX_FAMILY_FAME}, up to {formatTaxRate(TAX_CONSTANTS.MAX_FAMILY_FAME_BONUS)} bonus)</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={taxCalculations.family_fame}
+                    onChange={handleFamilyFameChange}
+                    disabled={isLoading || saving}
+                    placeholder={`Enter fame (max ${TAX_CONSTANTS.MAX_FAMILY_FAME})`}
+                    className="fame-input"
+                  />
+                </label>
               </div>
             </div>
           </div>

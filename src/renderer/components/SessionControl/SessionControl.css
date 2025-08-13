@@ -139,7 +139,7 @@
 
 .session-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
@@ -164,6 +164,154 @@
   font-size: 1.25rem;
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Tax Breakdown Accordion */
+.tax-breakdown-stat {
+  grid-column: 1 / -1;
+}
+
+.tax-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tax-stat-header:hover {
+  background: rgba(88, 101, 242, 0.1);
+  border-color: rgba(88, 101, 242, 0.2);
+}
+
+.tax-accordion-icon {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.tax-accordion-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.tax-breakdown-details {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+.breakdown-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.breakdown-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.breakdown-row.tax-deduction .breakdown-value {
+  color: #ed4245;
+}
+
+.breakdown-row.bonus .breakdown-value {
+  color: #43b581;
+}
+
+.breakdown-row.final-total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-weight: 600;
+}
+
+.breakdown-row.final-total .breakdown-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.breakdown-row.final-total .breakdown-value {
+  color: #43b581;
+  font-size: 1rem;
+}
+
+.breakdown-row.effective-rate .breakdown-label {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.breakdown-row.effective-rate .breakdown-value {
+  font-size: 0.8rem;
+  color: #43b581;
+}
+
+.breakdown-row.non-taxable .breakdown-label {
+  color: #87ceeb;
+  margin-left: 8px;
+}
+
+.breakdown-row.non-taxable .breakdown-value {
+  color: #87ceeb;
+}
+
+.breakdown-row.taxable .breakdown-label {
+  color: #ffa500;
+  margin-left: 8px;
+}
+
+.breakdown-row.taxable .breakdown-value {
+  color: #ffa500;
+}
+
+.breakdown-row.base-after-tax .breakdown-label,
+.breakdown-row.taxable-subtotal .breakdown-label {
+  margin-left: 16px;
+  font-weight: 500;
+}
+
+.breakdown-row.taxable-subtotal {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.breakdown-row.taxable-subtotal .breakdown-value {
+  color: #ffa500;
+  font-weight: 500;
+}
+
+.breakdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
 }
 
 .session-actions {
@@ -376,6 +524,111 @@
   color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+/* Tax Settings Section - Compact standalone section */
+.tax-settings-section {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.06), rgba(67, 181, 129, 0.04));
+  border-radius: 10px;
+  border: 1px solid rgba(88, 101, 242, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.tax-settings-section h5 {
+  margin: 0 0 12px 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tax-settings-section h5::before {
+  content: "💰";
+  font-size: 1.1rem;
+}
+
+.tax-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.tax-setting-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.tax-setting-item:hover {
+  border-color: rgba(88, 101, 242, 0.3);
+  background: rgba(88, 101, 242, 0.03);
+}
+
+.family-fame-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 140px;
+}
+
+.tax-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex: 1;
+}
+
+.tax-fame-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.tax-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-blue, #5865f2);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.tax-setting-text {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tax-fame-input {
+  width: 70px;
+  padding: 6px 8px;
+  background: var(--input-bg, #2f3136) !important;
+  color: var(--text-primary, #ffffff) !important;
+  border: 1px solid var(--input-border, #40444b);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tax-fame-input:focus {
+  outline: none;
+  border-color: var(--primary-blue, #5865f2);
+  box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.15);
+  background: rgba(88, 101, 242, 0.03) !important;
 }
 
 .no-items {
@@ -689,6 +942,16 @@
   .session-stats {
     grid-template-columns: 1fr;
     margin-bottom: 20px;
+  }
+  
+  /* Responsive tax settings */
+  .tax-settings-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .family-fame-item {
+    min-width: auto;
   }
   
   .active-loot-items {

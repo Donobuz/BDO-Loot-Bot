@@ -10,6 +10,12 @@ export interface User {
   permissions?: string[]; // Include user permissions
 }
 
+export interface TaxCalculations {
+  value_pack: boolean;
+  rich_merchant_ring: boolean;
+  family_fame: number;
+}
+
 export interface UserPreferences {
   user_id: number;
   preferred_region: string;
@@ -21,6 +27,7 @@ export interface UserPreferences {
     height: number;
     display?: string;
   } | null; // OCR region for loot detection
+  tax_calculations?: TaxCalculations | null; // Tax calculation settings
   created: string;
   updated: string;
 }

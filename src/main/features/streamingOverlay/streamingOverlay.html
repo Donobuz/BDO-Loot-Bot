@@ -123,7 +123,7 @@
       .session-stats {
         display: flex;
         justify-content: center;
-        gap: 16px;
+        gap: 24px;
         margin-bottom: 24px;
         padding: 16px;
         background: rgba(0, 0, 0, 0.2);
@@ -136,6 +136,7 @@
         flex-direction: column;
         gap: 4px;
         text-align: center;
+        flex: 1;
       }
 
       .stat-label {
@@ -148,6 +149,14 @@
         font-size: 1.5rem;
         color: #43b581;
         font-weight: 700;
+      }
+
+      .stat:first-child .stat-value {
+        color: #ffa500; /* Orange for gross value */
+      }
+
+      .stat:last-child .stat-value {
+        color: #43b581; /* Green for post-tax value */
       }
 
       .active-loot-items {
@@ -289,8 +298,12 @@
 
       <div class="session-stats">
         <div class="stat">
-          <span class="stat-label">Total Value:</span>
-          <span class="stat-value" id="totalValue">0 silver</span>
+          <span class="stat-label">Gross Value:</span>
+          <span class="stat-value" id="grossValue">0 silver</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Post-Tax Value:</span>
+          <span class="stat-value" id="postTaxValue">0 silver</span>
         </div>
       </div>
 

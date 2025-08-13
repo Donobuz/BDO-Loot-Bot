@@ -78,20 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function updateOverlay(data) {
   try {
-    // Calculate totals
-    let totalValue = 0;
-
-    if (data.items && Array.isArray(data.items)) {
-      data.items.forEach((item) => {
-        const count = data.itemCounts[item.id] || 0;
-        totalValue += count * item.calculatedPrice;
-      });
+    // Update gross value
+    const grossValueElement = document.getElementById("grossValue");
+    if (grossValueElement) {
+      const grossValue = data.grossValue || 0;
+      grossValueElement.textContent = `${grossValue.toLocaleString()} silver`;
     }
 
-    // Update total value
-    const totalValueElement = document.getElementById("totalValue");
-    if (totalValueElement) {
-      totalValueElement.textContent = `${totalValue.toLocaleString()} silver`;
+    // Update post-tax value
+    const postTaxValueElement = document.getElementById("postTaxValue");
+    if (postTaxValueElement) {
+      const postTaxValue = data.postTaxValue || 0;
+      postTaxValueElement.textContent = `${postTaxValue.toLocaleString()} silver`;
     }
 
     // Update items list
