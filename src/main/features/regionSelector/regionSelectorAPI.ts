@@ -42,7 +42,7 @@ export const regionSelectorHandlers = {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, '../../core/preload.js'),
+          preload: path.join(__dirname, 'regionSelectorPreload.js'),
         },
       });
 
@@ -56,37 +56,71 @@ export const regionSelectorHandlers = {
           return;
         }
 
-        // Handle region selection
-        regionSelectorWindow.webContents.once('ipc-message', (event, channel, data) => {
-          if (channel === 'region-selected') {
-            const region: OCRRegion = {
-              x: Math.round(data.x),
-              y: Math.round(data.y),
-              width: Math.round(data.width),
-              height: Math.round(data.height),
-              display: data.display || primaryDisplay.label
-            };
+        let resolved = false;
 
-            resolve({ success: true, region });
-            
-            // Close the selector window
-            if (regionSelectorWindow && !regionSelectorWindow.isDestroyed()) {
-              regionSelectorWindow.close();
-            }
-          } else if (channel === 'region-cancelled') {
-            resolve({ success: false, error: 'Region selection cancelled' });
-            
-            // Close the selector window
-            if (regionSelectorWindow && !regionSelectorWindow.isDestroyed()) {
-              regionSelectorWindow.close();
-            }
+        // Listen for IPC messages from the renderer
+        const ipcMain = require('electron').ipcMain;
+        
+        const regionSelectedHandler = (event: any, data: any) => {
+          if (resolved || event.sender !== regionSelectorWindow?.webContents) return;
+          
+          // Validate minimum size
+          const minWidth = 300;
+          const minHeight = 100;
+          if (data.width < minWidth || data.height < minHeight) {
+            console.log(`Region too small: ${data.width}×${data.height}, minimum required: ${minWidth}×${minHeight}`);
+            return; // Don't resolve, let user try again
           }
-        });
+          
+          resolved = true;
+          
+          const region: OCRRegion = {
+            x: Math.round(data.x),
+            y: Math.round(data.y),
+            width: Math.round(data.width),
+            height: Math.round(data.height),
+            display: data.display || primaryDisplay.label
+          };
+
+          // Clean up listeners
+          ipcMain.removeListener('region-selected', regionSelectedHandler);
+          ipcMain.removeListener('region-cancelled', regionCancelledHandler);
+          
+          resolve({ success: true, region });
+          
+          if (regionSelectorWindow && !regionSelectorWindow.isDestroyed()) {
+            regionSelectorWindow.close();
+          }
+        };
+        
+        const regionCancelledHandler = (event: any) => {
+          if (resolved || event.sender !== regionSelectorWindow?.webContents) return;
+          resolved = true;
+          
+          // Clean up listeners
+          ipcMain.removeListener('region-selected', regionSelectedHandler);
+          ipcMain.removeListener('region-cancelled', regionCancelledHandler);
+          
+          resolve({ success: false, error: 'Region selection cancelled' });
+          
+          if (regionSelectorWindow && !regionSelectorWindow.isDestroyed()) {
+            regionSelectorWindow.close();
+          }
+        };
+        
+        ipcMain.on('region-selected', regionSelectedHandler);
+        ipcMain.on('region-cancelled', regionCancelledHandler);
 
         // Handle window close
         regionSelectorWindow.on('closed', () => {
           regionSelectorWindow = null;
-          resolve({ success: false, error: 'Region selection cancelled' });
+          // Only resolve if not already resolved
+          if (!resolved) {
+            resolved = true;
+            ipcMain.removeListener('region-selected', regionSelectedHandler);
+            ipcMain.removeListener('region-cancelled', regionCancelledHandler);
+            resolve({ success: false, error: 'Region selection cancelled' });
+          }
         });
 
         // Send display info to renderer

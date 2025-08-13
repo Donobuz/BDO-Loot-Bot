@@ -121,11 +121,11 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   };
 
   return (
-    <div className="location-selector">
-      <div className="location-selector-header">
+    <div className="loot-location-selector">
+      <div className="loot-location-selector-header">
         <div className="header-left">
           <h3>Select Location</h3>
-          <div className="location-stats">
+          <div className="loot-location-stats">
             {filteredAndSortedLocations.length} of {locations.length} locations
           </div>
         </div>
@@ -148,14 +148,14 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       </div>
 
       {/* Search and Filters */}
-      <div className="location-filters">
-        <div className="search-bar">
+      <div className="loot-location-filters">
+        <div className="loot-search-bar">
           <input
             type="text"
             placeholder="Search locations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
+            className="loot-search-input"
           />
         </div>
 
@@ -205,7 +205,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       </div>
 
       {/* Location List */}
-      <div className={`location-list ${viewMode}`}>
+      <div className={`loot-location-list ${viewMode}`}>
         {paginatedLocations.length === 0 ? (
           <div className="no-locations">
             {searchQuery || filterMonsterType || filterHasLootTable !== 'all' ? 
@@ -231,10 +231,10 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
                 return (
                   <tr 
                     key={location.id}
-                    className={`location-row ${selectedLocationId === location.id ? 'selected' : ''}`}
+                    className={`loot-location-row ${selectedLocationId === location.id ? 'selected' : ''}`}
                     onClick={() => onLocationSelect(location.id)}
                   >
-                    <td>{location.name}</td>
+                    <td className="loot-location-name">{location.name}</td>
                     <td>{location.monster_type}</td>
                     <td>{location.ap}</td>
                     <td>{location.dp}</td>
@@ -255,28 +255,28 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
             return (
               <div 
                 key={location.id}
-                className={`location-item ${selectedLocationId === location.id ? 'selected' : ''} ${viewMode}`}
+                className={`loot-location-item ${selectedLocationId === location.id ? 'selected' : ''} ${viewMode}`}
                 onClick={() => onLocationSelect(location.id)}
               >
-                <div className="location-card-header">
-                  <div className="location-name">
+                <div className="loot-location-card-header">
+                  <div className="loot-location-name">
                     {location.name}
                   </div>
                 </div>
                 
-                <div className="location-details">
-                  <div className="location-stat">
-                    <span className="location-stat-label">AP:</span>
-                    <span className="location-stat-value">{location.ap}</span>
+                <div className="loot-location-details">
+                  <div className="loot-location-stat">
+                    <span className="loot-location-stat-label">AP:</span>
+                    <span className="loot-location-stat-value">{location.ap}</span>
                   </div>
-                  <div className="location-stat">
-                    <span className="location-stat-label">DP:</span>
-                    <span className="location-stat-value">{location.dp}</span>
+                  <div className="loot-location-stat">
+                    <span className="loot-location-stat-label">DP:</span>
+                    <span className="loot-location-stat-value">{location.dp}</span>
                   </div>
-                  <div className="location-monster">{location.monster_type}</div>
+                  <div className="loot-location-monster">{location.monster_type}</div>
                 </div>
                 
-                <div className="location-status">
+                <div className="loot-location-status">
                   <span className={`loot-table-status ${locationStatus.className}`}>
                     {locationStatus.text}
                   </span>

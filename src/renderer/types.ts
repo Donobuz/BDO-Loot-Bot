@@ -258,6 +258,28 @@ declare global {
         isReady: () => Promise<boolean>;
         initialize: () => Promise<{ success: boolean; error?: string }>;
       };
+      continuousOCR: {
+        start: (config: { 
+          region: OCRRegion; 
+          interval?: number; 
+          outputFileName?: string 
+        }) => Promise<{ 
+          success: boolean; 
+          outputPath?: string; 
+          error?: string 
+        }>;
+        stop: () => Promise<{ success: boolean; error?: string }>;
+        getStatus: () => Promise<{ 
+          success: boolean; 
+          isRunning: boolean; 
+          stats?: { 
+            ocrCount: number; 
+            sessionDuration?: number; 
+            averageProcessingTime?: number 
+          };
+          error?: string 
+        }>;
+      };
     };
   }
 }

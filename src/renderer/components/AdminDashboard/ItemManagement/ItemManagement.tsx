@@ -1052,11 +1052,11 @@ const ItemManagement: React.FC = () => {
 
       {/* Search Bar */}
       <div className="search-bar">
-        <div className="search-container">
-          <span className="search-icon">🔍</span>
+        <div className="item-search-container">
+          <span className="item-search-icon">🔍</span>
           <input
             type="text"
-            className="search-input"
+            className="item-search-input"
             placeholder="Search items by name or BDO ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

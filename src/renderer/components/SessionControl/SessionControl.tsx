@@ -43,6 +43,17 @@ export const SessionControl: React.FC<SessionControlProps> = ({
   const [isOverlayFocused, setIsOverlayFocused] = useState(false);
   const [streamingOverlayOpen, setStreamingOverlayOpen] = useState(false);
   
+  // OCR status state
+  const [ocrStatus, setOcrStatus] = useState<{
+    isRunning: boolean;
+    ocrCount: number;
+    sessionDuration?: number;
+    averageProcessingTime?: number;
+  }>({
+    isRunning: false,
+    ocrCount: 0
+  });
+  
   // Tax calculation state (local state, not saved until session starts)
   const [taxSettings, setTaxSettings] = useState<TaxCalculations>({
     value_pack: userPreferences.tax_calculations?.value_pack ?? false,
@@ -164,6 +175,45 @@ export const SessionControl: React.FC<SessionControlProps> = ({
       // Note: IPC listeners in Electron renderer are managed by the main process
     };
   }, []);
+
+  // Poll OCR status when session is active
+  useEffect(() => {
+    let statusInterval: NodeJS.Timeout | null = null;
+
+    if (session.isActive) {
+      const updateOCRStatus = async () => {
+        try {
+          const status = await window.electronAPI.continuousOCR.getStatus();
+          if (status.success && status.stats) {
+            setOcrStatus({
+              isRunning: status.isRunning,
+              ocrCount: status.stats.ocrCount,
+              sessionDuration: status.stats.sessionDuration,
+              averageProcessingTime: status.stats.averageProcessingTime
+            });
+          }
+        } catch (error) {
+          console.error('Failed to get OCR status:', error);
+        }
+      };
+
+      // Update immediately, then every 2 seconds for near real-time feedback
+      updateOCRStatus();
+      statusInterval = setInterval(updateOCRStatus, 2000);
+    } else {
+      // Reset OCR status when session is not active
+      setOcrStatus({
+        isRunning: false,
+        ocrCount: 0
+      });
+    }
+
+    return () => {
+      if (statusInterval) {
+        clearInterval(statusInterval);
+      }
+    };
+  }, [session.isActive]);
 
   // Prevent page refresh when session is active
   useEffect(() => {
@@ -447,12 +497,59 @@ export const SessionControl: React.FC<SessionControlProps> = ({
       };
       
       setSession(newSession);
+
+      // Start continuous OCR if region is configured
+      if (userPreferences.designated_ocr_region) {
+        try {
+          console.log('OCR region from user preferences:', userPreferences.designated_ocr_region);
+          console.log(`Starting hybrid OCR with ${lootTableItems.length} known items from loot table`);
+          
+          const ocrConfig = {
+            region: userPreferences.designated_ocr_region,
+            interval: 200, // 200ms (0.2 seconds) for ultra-fast reading
+            outputFileName: `hybrid-ocr-session-${selectedLocation.name}-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`,
+            knownItems: lootTableItems // Pass the loot table items for template matching
+          };
+
+          console.log('Starting Hybrid OCR with config:', {
+            ...ocrConfig,
+            knownItems: ocrConfig.knownItems.map(item => ({ id: item.id, name: item.name }))
+          });
+          
+          const ocrResult = await window.electronAPI.continuousOCR.start(ocrConfig);
+          if (ocrResult.success) {
+            console.log(`✅ Hybrid OCR started successfully. Output file: ${ocrResult.outputPath}`);
+            console.log(`🎯 Template matching enabled for ${lootTableItems.length} items from ${selectedLocation.name} loot table`);
+          } else {
+            console.error('❌ Failed to start hybrid OCR:', ocrResult.error);
+          }
+        } catch (error) {
+          console.error('Error starting hybrid OCR:', error);
+        }
+      } else {
+        console.log('No OCR region configured. Skipping continuous OCR.');
+      }
     } catch (error) {
       console.error("Failed to start session:", error);
     }
   };
 
   const handleStopSession = async () => {
+    // Stop continuous OCR if running
+    try {
+      const ocrStatus = await window.electronAPI.continuousOCR.getStatus();
+      if (ocrStatus.isRunning) {
+        const stopResult = await window.electronAPI.continuousOCR.stop();
+        if (stopResult.success) {
+          console.log('Continuous OCR stopped');
+        } else {
+          console.error('Failed to stop continuous OCR:', stopResult.error);
+        }
+      }
+    } catch (error) {
+      console.error('Error stopping continuous OCR:', error);
+    }
+
     // Close streaming overlay if it's open
     if (streamingOverlayOpen) {
       try {
@@ -677,6 +774,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         taxSettings={taxSettings}
         userPreferences={userPreferences}
         streamingOverlayOpen={streamingOverlayOpen}
+        ocrStatus={ocrStatus}
         onStopSession={handleStopSession}
         onOpenStreamingOverlay={handleOpenStreamingOverlay}
         onItemDetected={handleItemDetected}

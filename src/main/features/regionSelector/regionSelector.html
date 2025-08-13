@@ -97,7 +97,8 @@
     <div class="selection-box" id="selectionBox"></div>
     
     <div class="instructions">
-        Click and drag to select the area where loot messages appear
+        Click and drag to select the area where loot messages appear<br>
+        <small style="opacity: 0.8;">Minimum size: 300×300 pixels for readable text</small>
     </div>
     
     <div class="coordinates" id="coordinates">
@@ -163,12 +164,26 @@
             const width = Math.abs(currentX - startX);
             const height = Math.abs(currentY - startY);
             
+            const minWidth = 300;
+            const minHeight = 300;
+            const isValidSize = width >= minWidth && height >= minHeight;
+            
             selectionBox.style.left = left + 'px';
             selectionBox.style.top = top + 'px';
             selectionBox.style.width = width + 'px';
             selectionBox.style.height = height + 'px';
             
-            coordinates.textContent = `Position: (${left}, ${top}) | Size: ${width}×${height}`;
+            // Change border color based on size validity
+            if (isValidSize) {
+                selectionBox.style.border = '2px solid #43b581'; // Green for valid
+                selectionBox.style.background = 'rgba(67, 181, 129, 0.1)';
+            } else {
+                selectionBox.style.border = '2px solid #ed4245'; // Red for too small
+                selectionBox.style.background = 'rgba(237, 66, 69, 0.1)';
+            }
+            
+            const sizeStatus = isValidSize ? '✓' : `⚠ Min: ${minWidth}×${minHeight}`;
+            coordinates.textContent = `Position: (${left}, ${top}) | Size: ${width}×${height} ${sizeStatus}`;
         }
 
         function endSelection(e) {
@@ -181,10 +196,47 @@
             const width = Math.abs(currentX - startX);
             const height = Math.abs(currentY - startY);
             
-            // Minimum size check
-            if (width < 10 || height < 10) {
+            // Minimum size check (300x300 minimum for readable chat text)
+            const minWidth = 300;
+            const minHeight = 300;
+            
+            if (width < minWidth || height < minHeight) {
                 selectionBox.style.display = 'none';
                 coordinates.style.display = 'none';
+                
+                // Show a brief message about minimum size
+                const existingMessage = document.getElementById('minSizeMessage');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+                
+                const message = document.createElement('div');
+                message.id = 'minSizeMessage';
+                message.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(237, 66, 69, 0.9);
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    z-index: 4;
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                `;
+                message.textContent = `Selection too small! Minimum size: ${minWidth}×${minHeight} pixels`;
+                document.body.appendChild(message);
+                
+                // Remove message after 2 seconds
+                setTimeout(() => {
+                    if (message.parentNode) {
+                        message.parentNode.removeChild(message);
+                    }
+                }, 2000);
+                
                 return;
             }
             

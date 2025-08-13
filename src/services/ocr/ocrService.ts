@@ -45,6 +45,8 @@ export interface ItemExtractionResult {
 export class OCRService {
   private isInitialized: boolean = false;
   private ocrWorker: any = null;
+  private knownItems: any[] = [];
+  private templateCache: Map<string, any> = new Map();
 
   constructor() {
     // No external dependencies needed - everything is bundled
@@ -62,6 +64,96 @@ export class OCRService {
     } catch (error) {
       throw new Error(`Failed to initialize OCR service: ${error}`);
     }
+  }
+
+  initializeWithKnownItems(knownItems: any[]): void {
+    console.log(`🎯 Initializing OCR with ${knownItems.length} known items for template matching...`);
+    
+    // Log the first few items to verify we're getting the right data
+    console.log(`📋 Sample known items:`, knownItems.slice(0, 3).map(item => item.name || item));
+    
+    // Store known items and build template cache
+    this.knownItems = knownItems;
+    this.buildTemplateCache();
+    
+    console.log(`📊 Template matching ready for ${knownItems.length} items with ${this.templateCache.size} templates`);
+  }
+
+  private buildTemplateCache(): void {
+    this.templateCache.clear();
+    
+    this.knownItems.forEach(item => {
+      if (item && item.name) {
+        const itemName = item.name.toLowerCase().trim();
+        
+        // Store multiple variations for matching
+        const variations = [
+          itemName,
+          itemName.replace(/[^a-z0-9\s]/gi, ''), // Remove special chars
+          itemName.replace(/\s+/g, ''), // Remove spaces
+          itemName.replace(/\s+/g, '_'), // Spaces to underscores
+        ];
+        
+        variations.forEach(variation => {
+          this.templateCache.set(variation, {
+            id: item.id,
+            originalName: item.name,
+            confidence: 0.9
+          });
+        });
+      }
+    });
+    
+    console.log(`� Built template cache with ${this.templateCache.size} searchable patterns`);
+  }
+
+  private performTemplateMatching(extractedText: string): Array<{
+    text: string;
+    confidence: number;
+    bbox: number[][];
+  }> {
+    console.log(`🔍 Template matching: Checking "${extractedText}" against ${this.templateCache.size} patterns`);
+    
+    if (!extractedText || this.templateCache.size === 0) {
+      console.log(`❌ Template matching skipped: no text (${!extractedText}) or no cache (${this.templateCache.size === 0})`);
+      return [];
+    }
+
+    const matches: Array<{
+      text: string;
+      confidence: number;
+      bbox: number[][];
+    }> = [];
+    const text = extractedText.toLowerCase();
+    
+    console.log(`🔎 Searching for patterns in: "${text}"`);
+    
+    // Look for known items in the extracted text
+    for (const [pattern, itemData] of this.templateCache.entries()) {
+      if (text.includes(pattern)) {
+        // Extract quantity if present
+        const quantityMatch = text.match(/x(\d+)|×(\d+)|\*(\d+)|(\d+)x/i);
+        const quantity = quantityMatch ? 
+          parseInt(quantityMatch[1] || quantityMatch[2] || quantityMatch[3] || quantityMatch[4]) : 1;
+        
+        const itemText = quantity > 1 ? `${itemData.originalName} x${quantity}` : itemData.originalName;
+        
+        matches.push({
+          text: itemText,
+          confidence: itemData.confidence,
+          bbox: [[0, 0], [100, 0], [100, 20], [0, 20]] // Mock bbox for template matches
+        });
+        
+        console.log(`✅ Template match: "${itemData.originalName}" x${quantity} (pattern: "${pattern}")`);
+        break; // Found a match, don't check other patterns for this item
+      }
+    }
+    
+    if (matches.length === 0) {
+      console.log(`❌ No template matches found for "${extractedText}"`);
+    }
+    
+    return matches;
   }
 
   private async preprocessImage(imagePath: string, region?: OCRRegion): Promise<Buffer> {
@@ -160,13 +252,28 @@ export class OCRService {
       // Perform OCR
       const results = await this.performFastOCR(processedBuffer);
       
+      // Get combined text for template matching
+      const totalText = results.map(r => r.text).join(' ');
+      
+      // Try template matching first if we have known items
+      let finalResults = results;
+      if (this.templateCache.size > 0) {
+        const templateMatches = this.performTemplateMatching(totalText);
+        if (templateMatches.length > 0) {
+          console.log(`🎯 Using template matching results: ${templateMatches.length} matches`);
+          finalResults = templateMatches;
+        } else {
+          console.log(`🔍 No template matches found, using OCR results`);
+        }
+      }
+      
       const processingTime = Date.now() - startTime;
       
       return {
         success: true,
-        results: results,
+        results: finalResults,
         processing_time: processingTime,
-        total_text: results.map(r => r.text).join(' ')
+        total_text: totalText
       };
     } catch (err) {
       return {
@@ -188,8 +295,25 @@ export class OCRService {
       // Perform OCR
       const rawResults = await this.performFastOCR(processedBuffer);
       
-      // Filter for BDO items
-      const items = this.filterItems(rawResults);
+      // Get combined text for template matching
+      const totalText = rawResults.map(r => r.text).join(' ');
+      
+      // Try template matching first if we have known items
+      let items = this.filterItems(rawResults);
+      if (this.templateCache.size > 0) {
+        const templateMatches = this.performTemplateMatching(totalText);
+        if (templateMatches.length > 0) {
+          console.log(`🎯 Using template matching for item extraction: ${templateMatches.length} matches`);
+          // Convert template matches to item format
+          items = templateMatches.map(match => ({
+            name: match.text,
+            confidence: match.confidence,
+            bbox: match.bbox
+          }));
+        } else {
+          console.log(`🔍 No template matches found, using filtered OCR results`);
+        }
+      }
       
       const processingTime = Date.now() - startTime;
       

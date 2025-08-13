@@ -108,5 +108,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     installDependencies: () => ipcRenderer.invoke('ocr-install-dependencies'),
     isReady: () => ipcRenderer.invoke('ocr-is-ready'),
     initialize: () => ipcRenderer.invoke('ocr-initialize'),
+  },
+
+  // Continuous OCR API
+  continuousOCR: {
+    start: (config: { region: any; interval?: number; outputFileName?: string; knownItems?: any[] }) => 
+      ipcRenderer.invoke('continuous-ocr-start', config),
+    stop: () => ipcRenderer.invoke('continuous-ocr-stop'),
+    getStatus: () => ipcRenderer.invoke('continuous-ocr-status'),
   }
 });

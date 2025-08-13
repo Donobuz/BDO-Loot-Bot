@@ -11,17 +11,21 @@ import { regionSelectorHandlers } from '../features/regionSelector/regionSelecto
 import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
 import { sessionEventHandlers } from '../api/sessionEventAPI';
 import { ocrAPI } from '../api/ocrAPI';
+import { continuousOCRHandlers, cleanupContinuousOCR } from '../api/continuousOcrAPI';
 import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
 let storageService: StorageService;
 
 // Cleanup function for when the main window refreshes or closes
-const cleanupSession = () => {
+const cleanupSession = async () => {
   console.log('Cleaning up session due to window refresh/close...');
   
   // Close streaming overlay if open
   cleanupStreamingOverlay();
+  
+  // Stop continuous OCR if running
+  await cleanupContinuousOCR();
   
   // Broadcast cleanup event to all windows
   const allWindows = BrowserWindow.getAllWindows();
@@ -170,6 +174,11 @@ Object.entries(sessionEventHandlers).forEach(([event, handler]) => {
 
 // Setup OCR handlers
 Object.entries(ocrAPI).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup continuous OCR handlers
+Object.entries(continuousOCRHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

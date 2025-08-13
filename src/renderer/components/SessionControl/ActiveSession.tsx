@@ -13,6 +13,12 @@ interface ActiveSessionProps {
   taxSettings: TaxCalculations;
   userPreferences: any;
   streamingOverlayOpen: boolean;
+  ocrStatus: {
+    isRunning: boolean;
+    ocrCount: number;
+    sessionDuration?: number;
+    averageProcessingTime?: number;
+  };
   onStopSession: () => void;
   onOpenStreamingOverlay: () => void;
   onItemDetected: (event: any, data: any) => void;
@@ -28,6 +34,7 @@ export const ActiveSession: React.FC<ActiveSessionProps> = ({
   taxSettings,
   userPreferences,
   streamingOverlayOpen,
+  ocrStatus,
   onStopSession,
   onOpenStreamingOverlay,
   onItemDetected,
@@ -360,6 +367,30 @@ export const ActiveSession: React.FC<ActiveSessionProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* OCR Status Section */}
+      <div className='ocr-status-section'>
+        <div className='ocr-status-header'>
+          <span className='ocr-status-label'>OCR Status:</span>
+          <span className={`ocr-status-indicator ${ocrStatus.isRunning ? 'active' : 'inactive'}`}>
+            {ocrStatus.isRunning ? '🟢 Active' : '🔴 Inactive'}
+          </span>
+        </div>
+        {ocrStatus.isRunning && (
+          <div className='ocr-stats'>
+            <div className='ocr-stat'>
+              <span className='ocr-stat-label'>Scans:</span>
+              <span className='ocr-stat-value'>{ocrStatus.ocrCount}</span>
+            </div>
+            {ocrStatus.averageProcessingTime && (
+              <div className='ocr-stat'>
+                <span className='ocr-stat-label'>Avg Time:</span>
+                <span className='ocr-stat-value'>{Math.round(ocrStatus.averageProcessingTime)}ms</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {!streamingOverlayOpen && (
