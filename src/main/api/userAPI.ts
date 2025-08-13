@@ -1,6 +1,6 @@
+import { usersService } from '../../services/db/users';
+import { UserPreferencesService } from '../../services/db/userPreferences';
 import { IpcMainInvokeEvent } from 'electron';
-import { usersService } from '../services/db/users';
-import { UserPreferencesService } from '../services/db/userPreferences';
 
 const userPreferencesService = new UserPreferencesService();
 

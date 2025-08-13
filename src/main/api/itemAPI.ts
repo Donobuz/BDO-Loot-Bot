@@ -3,10 +3,10 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
-import { itemsService } from "../services/db/items";
-import { adminDatabase } from "../services/db/admin";
-import { StorageService } from "../services/db/storage";
-import { ItemType } from "../services/db/types";
+import { itemsService } from "../../services/db/items";
+import { adminDatabase } from "../../services/db/admin";
+import { StorageService } from "../../services/db/storage";
+import { ItemType } from "../../services/db/types";
 
 // Arsha API base URL
 const ARSHA_API_BASE = "https://api.arsha.io/v2";
@@ -585,7 +585,6 @@ export const itemHandlers = {
       }
 
       // Upload image to storage (single upload for all regions)
-      console.log(`📤 Uploading image for BDO Item ID ${bdoItemId}...`);
       const uploadResult = await storageService.uploadImageForBdoItem(
         processedImageBuffer,
         originalName,
@@ -598,9 +597,6 @@ export const itemHandlers = {
       }
 
       // Update all items with this bdo_item_id to use the same image URL
-      console.log(
-        `🔄 Updating all items with BDO Item ID ${bdoItemId} to use uploaded image...`
-      );
       const updateResult = await itemsService.updateImageForAllRegions(
         bdoItemId,
         uploadResult.data!.publicUrl
@@ -612,11 +608,6 @@ export const itemHandlers = {
         return updateResult;
       }
 
-      console.log(
-        `✅ Image uploaded and applied to ${
-          updateResult.data?.length || 0
-        } items`
-      );
       return {
         success: true,
         data: {

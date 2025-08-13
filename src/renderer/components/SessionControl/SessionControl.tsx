@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { UserPreferences, Location, Item, LootTable } from "../../types";
+import { useModal } from "../../contexts/ModalContext";
 import "./SessionControl.css";
 
 interface SessionControlProps {
@@ -11,7 +12,6 @@ interface SessionState {
   isActive: boolean;
   startTime?: Date;
   location?: Location;
-  itemsDetected: number;
   itemCounts: Map<number, number>; // item.id -> count
 }
 
@@ -25,7 +25,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 }) => {
   const [session, setSession] = useState<SessionState>({
     isActive: false,
-    itemsDetected: 0,
     itemCounts: new Map(),
   });
   const [locations, setLocations] = useState<Location[]>([]);
@@ -37,13 +36,58 @@ export const SessionControl: React.FC<SessionControlProps> = ({
   const [locationLootTables, setLocationLootTables] = useState<
     Map<number, boolean>
   >(new Map());
+  const [isOverlayFocused, setIsOverlayFocused] = useState(false);
   const [streamingOverlayOpen, setStreamingOverlayOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Modal context for refresh warning
+  const { showModal, hideModal } = useModal();
 
   const hasOCRRegion =
     userPreferences.designated_ocr_region &&
     userPreferences.designated_ocr_region.width > 0 &&
     userPreferences.designated_ocr_region.height > 0;
+
+  // Event handlers for overlay lifecycle
+  const handleOverlayOpened = () => {
+    setStreamingOverlayOpen(true);
+  };
+
+  const handleOverlayClosed = () => {
+    setStreamingOverlayOpen(false);
+  };
+
+  const handleSessionCleanup = (data: any) => {
+    // Stop current session if active
+    if (session.isActive) {
+      setSession(prev => ({
+        ...prev,
+        isActive: false,
+        startTime: undefined,
+        itemCounts: new Map()
+      }));
+    }
+    
+    // Close overlay if open
+    if (streamingOverlayOpen) {
+      setStreamingOverlayOpen(false);
+    }
+  };
+
+  const handleItemDetected = (event: any, data: any) => {
+    if (!session.isActive) return;
+
+    setSession(prev => {
+      const newItemCounts = new Map(prev.itemCounts);
+      const currentCount = newItemCounts.get(data.itemId) || 0;
+      newItemCounts.set(data.itemId, currentCount + 1);
+
+      return {
+        ...prev,
+        itemCounts: newItemCounts
+      };
+    });
+  };
 
   // Load locations on component mount
   useEffect(() => {
@@ -59,19 +103,86 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     }
   }, [selectedLocation]);
 
-  // Listen for streaming overlay close
+  // Listen for streaming overlay events
   useEffect(() => {
-    const handleOverlayClosed = () => {
-      console.log('Overlay closed, restoring UI');
-      setStreamingOverlayOpen(false);
+    // Set up the listeners
+    window.electronAPI.onStreamingOverlayOpened(handleOverlayOpened);
+    window.electronAPI.onStreamingOverlayClosed(handleOverlayClosed);
+    window.electronAPI.onStreamingOverlayFocused(() => {
+      setIsOverlayFocused(true);
+    });
+    window.electronAPI.onStreamingOverlayBlurred(() => {
+      setIsOverlayFocused(false);
+    });
+    window.electronAPI.onSessionCleanup(handleSessionCleanup);
+
+    // Check initial state on mount
+    const checkInitialState = async () => {
+      try {
+        const result = await window.electronAPI.isStreamingOverlayOpen();
+        if (result.success) {
+          setStreamingOverlayOpen(result.isOpen);
+        }
+      } catch (error) {
+        console.error('Failed to check initial overlay state:', error);
+      }
     };
 
-    window.electronAPI.onStreamingOverlayClosed(handleOverlayClosed);
+    checkInitialState();
 
     return () => {
-      // Cleanup listener if needed
+      // Note: IPC listeners in Electron renderer are managed by the main process
     };
   }, []);
+
+  // Prevent page refresh when session is active
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Cmd+R (Mac) or Ctrl+R (Windows/Linux) or F5
+      const isRefreshShortcut = 
+        (event.metaKey && event.key === 'r') || // Cmd+R (Mac)
+        (event.ctrlKey && event.key === 'r') || // Ctrl+R (Windows/Linux)
+        event.key === 'F5'; // F5
+
+      if (isRefreshShortcut && (session.isActive || (streamingOverlayOpen && !isOverlayFocused))) {
+        event.preventDefault();
+        
+        const modalId = 'refresh-warning';
+        
+        // Show confirmation modal
+        showModal({
+          id: modalId,
+          type: 'confirmation',
+          title: 'Refresh Warning',
+          message: session.isActive 
+            ? 'You have an active grinding session. Refreshing will stop your session and all progress will be lost. Are you sure you want to continue?'
+            : 'You have a streaming overlay open. Refreshing will close the overlay. Are you sure you want to continue?',
+          confirmText: 'Continue',
+          cancelText: 'Cancel',
+          isDestructive: true,
+          onConfirm: () => {
+            // Close modal and reload
+            hideModal(modalId);
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+          },
+          onClose: () => {
+            // Close modal
+            hideModal(modalId);
+          }
+        });
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [session.isActive, streamingOverlayOpen, showModal, hideModal]);
 
   // Update timer every second
   useEffect(() => {
@@ -88,14 +199,16 @@ export const SessionControl: React.FC<SessionControlProps> = ({
       const overlayData = {
         location: session.location,
         items: lootTableItems,
-        itemCounts: Object.fromEntries(session.itemCounts)
+        itemCounts: Object.fromEntries(session.itemCounts),
+        sessionStartTime: session.startTime?.toISOString()
       };
-      console.log('Updating overlay with data:', overlayData);
+      
+      // Update overlay directly
       window.electronAPI.updateStreamingOverlay(overlayData).catch(error => {
         console.error('Failed to update streaming overlay:', error);
       });
     }
-  }, [streamingOverlayOpen, session.location, session.itemCounts, lootTableItems]);
+  }, [streamingOverlayOpen, session.isActive, session.startTime, session.location, session.itemCounts, lootTableItems]);
 
   const loadLocations = async () => {
     try {
@@ -241,59 +354,77 @@ export const SessionControl: React.FC<SessionControlProps> = ({
   };
 
   const handleStartSession = async () => {
-    if (!hasOCRRegion || !selectedLocation) {
-      return; // This shouldn't happen as button should be disabled
+    if (!selectedLocation) {
+      console.error("No location selected");
+      return;
     }
 
     try {
-      // TODO: Start OCR scanning with the designated region
-      setSession({
+      const newSession = {
         isActive: true,
         startTime: new Date(),
         location: selectedLocation,
-        itemsDetected: 0,
         itemCounts: new Map(),
-      });
-
-      console.log("Starting session at location:", selectedLocation.name);
-      console.log("OCR region:", userPreferences.designated_ocr_region);
-      console.log("Loot items to detect:", lootTableItems);
+      };
+      
+      setSession(newSession);
     } catch (error) {
       console.error("Failed to start session:", error);
     }
   };
 
-  const handleStopSession = () => {
+  const handleStopSession = async () => {
+    // Close streaming overlay if it's open
+    if (streamingOverlayOpen) {
+      try {
+        await window.electronAPI.closeStreamingOverlay();
+        setStreamingOverlayOpen(false);
+      } catch (error) {
+        console.error('Failed to close streaming overlay:', error);
+      }
+    }
+    
     setSession({ 
       isActive: false, 
-      itemsDetected: 0, 
       itemCounts: new Map() 
     });
-    console.log("Session stopped");
   };
 
   const handleOpenStreamingOverlay = async () => {
+    // Don't allow opening if already open (button should be disabled anyway)
+    if (streamingOverlayOpen) {
+      return;
+    }
+
     try {
       const overlayData = {
-        location: session.location,
+        location: session.location || selectedLocation || undefined, // Use selectedLocation if session hasn't started
         items: lootTableItems,
-        itemCounts: Object.fromEntries(session.itemCounts)
+        itemCounts: Object.fromEntries(session.itemCounts),
+        sessionStartTime: session.startTime?.toISOString() || new Date().toISOString()
       };
-      console.log('Sending overlay data:', overlayData);
+      
       const result = await window.electronAPI.openStreamingOverlay(overlayData);
       
-      if (result.success) {
-        setStreamingOverlayOpen(true);
-        console.log('Streaming overlay opened');
-      } else {
+      if (!result.success) {
         console.error('Failed to open streaming overlay:', result.error);
       }
+      // Note: We don't set state here - we wait for the 'streaming-overlay-opened' event
     } catch (error) {
-      console.error('Failed to open streaming overlay:', error);
+      console.error('Error opening streaming overlay:', error);
     }
   };
 
 
+
+  const calculateTotalValue = (): number => {
+    let totalValue = 0;
+    lootTableItems.forEach(item => {
+      const count = session.itemCounts.get(item.id) || 0;
+      totalValue += count * item.calculatedPrice;
+    });
+    return totalValue;
+  };
 
   const formatSessionDuration = (startTime: Date): string => {
     const diff = currentTime.getTime() - startTime.getTime();
@@ -310,15 +441,38 @@ export const SessionControl: React.FC<SessionControlProps> = ({
             <div className='status-indicator active'></div>
             <h3>Active Session</h3>
           </div>
-          <div className='session-duration'>
-            {formatSessionDuration(session.startTime)}
+          <div className='session-controls'>
+            <div className='session-duration'>
+              {formatSessionDuration(session.startTime)}
+            </div>
+            {!streamingOverlayOpen && (
+              <button 
+                onClick={handleOpenStreamingOverlay}
+                className='overlay-launch-icon'
+                title='Open Streaming Overlay'
+                aria-label='Open Streaming Overlay'
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 7h10v10" />
+                  <path d="M7 17L17 7" />
+                </svg>
+              </button>
+            )}
+            {streamingOverlayOpen && (
+              <div className='overlay-active-indicator' title='Streaming Overlay Active'>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" fill="none" />
+                </svg>
+              </div>
+            )}
           </div>
         </div>
 
         <div className='session-stats'>
           <div className='stat'>
-            <span className='stat-label'>Total Items:</span>
-            <span className='stat-value'>{session.itemsDetected}</span>
+            <span className='stat-label'>Total Value:</span>
+            <span className='stat-value'>{calculateTotalValue().toLocaleString()} silver</span>
           </div>
           <div className='stat'>
             <span className='stat-label'>Location:</span>
@@ -328,7 +482,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
         {!streamingOverlayOpen && (
           <div className='active-loot-items'>
-            <h4>Loot Detected</h4>
+            <h4>Loot</h4>
             <div className='active-items-grid'>
             {lootTableItems.map(item => {
               const count = session.itemCounts.get(item.id) || 0;
@@ -367,7 +521,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         
         {streamingOverlayOpen && (
           <div className='overlay-active-message'>
-            <div className='overlay-icon'>🎥</div>
             <h4>Streaming Overlay Active</h4>
             <p>Loot tracking is displayed in the overlay window to save resources.</p>
           </div>
@@ -377,12 +530,23 @@ export const SessionControl: React.FC<SessionControlProps> = ({
           <button onClick={handleStopSession} className='stop-session-button'>
             Stop Session
           </button>
-          <button 
-            onClick={handleOpenStreamingOverlay}
-            className='streaming-overlay-button'
-          >
-            🎥 Open Streaming Overlay
-          </button>
+          {/* Test button for item detection */}
+          {lootTableItems.length > 0 && (
+            <button 
+              onClick={() => handleItemDetected(null, { itemName: lootTableItems[0].name, itemId: lootTableItems[0].id })}
+              className='test-item-button'
+              style={{ 
+                background: '#28a745', 
+                border: '2px solid #28a745',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '12px'
+              }}
+            >
+              🧪 Test Item Detection
+            </button>
+          )}
         </div>
       </div>
     );
@@ -432,7 +596,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
           {selectedLocation && (
             <div className='loot-items-section'>
-              <h4>Loot Items ({lootTableItems.length})</h4>
+              <h4>Loot Table</h4>
               {lootTableItems.length === 0 ? (
                 <p className='no-items'>
                   No items configured for this location.

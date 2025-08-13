@@ -74,12 +74,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   openStreamingOverlay: (data: any) => ipcRenderer.invoke('open-streaming-overlay', data),
   updateStreamingOverlay: (data: any) => ipcRenderer.invoke('update-streaming-overlay', data),
+  closeStreamingOverlay: () => ipcRenderer.invoke('close-streaming-overlay'),
+  isStreamingOverlayOpen: () => ipcRenderer.invoke('is-streaming-overlay-open'),
 
   onOverlayData: (callback: (data: any) => void) => {
     ipcRenderer.on('overlay-data', (event, data) => callback(data));
   },
 
+  onStreamingOverlayOpened: (callback: () => void) => {
+    ipcRenderer.on('streaming-overlay-opened', () => callback());
+  },
+
   onStreamingOverlayClosed: (callback: () => void) => {
     ipcRenderer.on('streaming-overlay-closed', () => callback());
+  },
+
+  onStreamingOverlayFocused: (callback: () => void) => {
+    ipcRenderer.on('streaming-overlay-focused', () => callback());
+  },
+
+  onStreamingOverlayBlurred: (callback: () => void) => {
+    ipcRenderer.on('streaming-overlay-blurred', () => callback());
+  },
+
+  onSessionCleanup: (callback: (data: any) => void) => {
+    ipcRenderer.on('session-cleanup', (event, data) => callback(data));
   }
 });

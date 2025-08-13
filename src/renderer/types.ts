@@ -232,14 +232,25 @@ declare global {
         location?: Location;
         items: any[];
         itemCounts: Record<number, number>;
+        sessionStartTime: string;
       }) => Promise<{ success: boolean; error?: string }>;
       updateStreamingOverlay: (data: {
         location?: Location;
         items: any[];
         itemCounts: Record<number, number>;
+        sessionStartTime?: string;
       }) => Promise<{ success: boolean; error?: string }>;
+      closeStreamingOverlay: () => Promise<{ success: boolean; error?: string }>;
+      isStreamingOverlayOpen: () => Promise<{ success: boolean; isOpen: boolean; error?: string }>;
       onOverlayData: (callback: (data: any) => void) => void;
+      onStreamingOverlayOpened: (callback: () => void) => void;
       onStreamingOverlayClosed: (callback: () => void) => void;
+      onStreamingOverlayFocused: (callback: () => void) => void;
+      onStreamingOverlayBlurred: (callback: () => void) => void;
+      onSessionCleanup: (callback: (data: {
+        reason: string;
+        timestamp: string;
+      }) => void) => void;
     };
   }
 }

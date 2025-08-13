@@ -1,18 +1,43 @@
 import { app, BrowserWindow, ipcMain, protocol } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { authService } from '../services/auth';
-import { databaseService } from '../services/db';
-import { setupLocationHandlers } from './locationAPI';
-import { itemHandlers } from './itemAPI';
-import { lootTableHandlers } from './lootTableAPI';
-import { userHandlers, userPreferencesHandlers } from './userAPI';
-import { regionSelectorHandlers } from './regionSelectorAPI';
-import { streamingOverlayHandlers } from './streamingOverlayAPI';
-import { StorageService } from '../services/db/storage';
+import { authService } from '../../services/auth';
+import { databaseService } from '../../services/db';
+import { setupLocationHandlers } from '../api/locationAPI';
+import { itemHandlers } from '../api/itemAPI';
+import { lootTableHandlers } from '../api/lootTableAPI';
+import { userHandlers, userPreferencesHandlers } from '../api/userAPI';
+import { regionSelectorHandlers } from '../features/regionSelector/regionSelectorAPI';
+import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
+import { sessionEventHandlers } from '../api/sessionEventAPI';
+import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
 let storageService: StorageService;
+
+// Cleanup function for when the main window refreshes or closes
+const cleanupSession = () => {
+  console.log('Cleaning up session due to window refresh/close...');
+  
+  // Close streaming overlay if open
+  cleanupStreamingOverlay();
+  
+  // Broadcast cleanup event to all windows
+  const allWindows = BrowserWindow.getAllWindows();
+  allWindows.forEach(window => {
+    if (!window.isDestroyed()) {
+      window.webContents.send('session-cleanup', {
+        reason: 'window-refresh-or-close',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+  
+  // TODO: In future, stop any active session and prevent saving to database
+  // For now, cleanup is handled by the session-cleanup event broadcast above
+  
+  console.log('Session cleanup completed');
+}
 
 async function createWindow() {
   // Initialize database
@@ -38,6 +63,27 @@ async function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
+  
+  // Handle window events for cleanup
+  win.webContents.on('will-navigate', (event, navigationUrl) => {
+    // If navigating to the same URL (refresh), cleanup session
+    const currentUrl = win.webContents.getURL();
+    if (navigationUrl === currentUrl) {
+      console.log('Main window refresh detected - cleaning up session');
+      cleanupSession();
+    }
+  });
+  
+  win.webContents.on('did-start-navigation', () => {
+    // This fires on refresh (Cmd+R) - cleanup session
+    console.log('Main window navigation started - cleaning up session');
+    cleanupSession();
+  });
+  
+  win.on('closed', () => {
+    console.log('Main window closed - cleaning up session');
+    cleanupSession();
+  });
   
   // Open DevTools in development
   if (process.env.NODE_ENV === 'development') {
@@ -113,6 +159,11 @@ Object.entries(regionSelectorHandlers).forEach(([event, handler]) => {
 
 // Setup streaming overlay handlers
 Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup session event handlers
+Object.entries(sessionEventHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

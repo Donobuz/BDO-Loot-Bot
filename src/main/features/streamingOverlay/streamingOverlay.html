@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://ymvjrotyvagtxdntimki.supabase.co data:; connect-src 'self' https://ymvjrotyvagtxdntimki.supabase.co;" />
     <title>BDO Loot Tracker - Streaming Overlay</title>
     <style>
       :root {
@@ -29,6 +30,9 @@
         padding: 0;
         margin: 0;
         overflow-x: hidden;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
 
       .overlay-container {
@@ -39,6 +43,10 @@
         padding: 24px;
         backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 40px);
       }
 
       .session-header {
@@ -113,8 +121,8 @@
       }
 
       .session-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        display: flex;
+        justify-content: center;
         gap: 16px;
         margin-bottom: 24px;
         padding: 16px;
@@ -127,6 +135,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        text-align: center;
       }
 
       .stat-label {
@@ -136,9 +145,9 @@
       }
 
       .stat-value {
-        font-size: 1.25rem;
-        color: var(--text-primary);
-        font-weight: 600;
+        font-size: 1.5rem;
+        color: #43b581;
+        font-weight: 700;
       }
 
       .active-loot-items {
@@ -146,6 +155,7 @@
         background: rgba(0, 0, 0, 0.2);
         border-radius: 8px;
         border: 1px solid var(--card-border);
+        flex: 1;
       }
 
       .active-loot-items h4 {
@@ -153,13 +163,14 @@
         color: var(--text-primary);
         font-size: 1.1rem;
         font-weight: 600;
+        text-align: center;
       }
 
       .active-items-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 12px;
-        max-height: 400px;
+        max-height: 500px;
         overflow-y: auto;
       }
 
@@ -187,14 +198,15 @@
         align-items: center;
         justify-content: center;
         border-radius: 6px;
-        overflow: hidden;
+        overflow: visible;
         background: rgba(0, 0, 0, 0.2);
+        padding: 4px;
       }
 
       .item-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
         border-radius: 4px;
       }
 
@@ -270,127 +282,46 @@
       <div class="session-header">
         <div class="session-status">
           <div class="status-indicator"></div>
-          <h3>Active Session</h3>
+          <h3>Loot Tracker</h3>
         </div>
         <div class="session-duration" id="sessionDuration">0:00</div>
       </div>
 
       <div class="session-stats">
         <div class="stat">
-          <span class="stat-label">Total Items:</span>
-          <span class="stat-value" id="totalItems">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Location:</span>
-          <span class="stat-value" id="location">No Location</span>
+          <span class="stat-label">Total Value:</span>
+          <span class="stat-value" id="totalValue">0 silver</span>
         </div>
       </div>
 
       <div class="active-loot-items">
-        <h4>Loot Detected (<span id="itemCount">0</span>)</h4>
         <div class="active-items-grid" id="lootItems">
-          <div class="no-items">No items detected yet</div>
+          <div class="no-items">No loot yet</div>
         </div>
       </div>
     </div>
 
     <script>
-      let currentData = null;
-      let sessionStartTime = null;
+      // Prevent refresh in overlay window
+      document.addEventListener('keydown', (event) => {
+        const isRefreshShortcut = 
+          (event.metaKey && event.key === 'r') || // Cmd+R (Mac)
+          (event.ctrlKey && event.key === 'r') || // Ctrl+R (Windows/Linux)
+          event.key === 'F5'; // F5
 
-      // Listen for data from main process
-      window.electronAPI.onOverlayData((data) => {
-        console.log("Overlay received data:", data);
-        currentData = data;
-        if (!sessionStartTime) {
-          sessionStartTime = new Date();
+        if (isRefreshShortcut) {
+          event.preventDefault();
+          console.log('Refresh prevented in overlay window');
+          return false;
         }
-        updateOverlay(data);
       });
 
-      function updateOverlay(data) {
-        console.log("Updating overlay with data:", data);
-        // Update location
-        const locationElement = document.getElementById("location");
-        locationElement.textContent = data.location?.name || "No Location";
-
-        // Calculate totals
-        let totalItems = 0;
-        let totalValue = 0;
-
-        data.items.forEach((item) => {
-          const count = data.itemCounts[item.id] || 0;
-          totalItems += count;
-          totalValue += count * item.calculatedPrice;
-        });
-
-        // Update stats
-        document.getElementById("totalItems").textContent = totalItems;
-        document.getElementById("itemCount").textContent = totalItems;
-
-        // Update items list
-        const lootItemsContainer = document.getElementById("lootItems");
-
-        if (totalItems === 0) {
-          lootItemsContainer.innerHTML =
-            '<div class="no-items">No items detected yet</div>';
-          return;
-        }
-
-        // Show all items like the main app
-        lootItemsContainer.innerHTML = data.items
-          .map((item) => {
-            const count = data.itemCounts[item.id] || 0;
-            const value = count * item.calculatedPrice;
-
-            return `
-                    <div class="active-loot-item">
-                        <div class="item-image-container">
-                            ${
-                              item.image_url
-                                ? `<img src="${item.image_url}" alt="${item.name}" class="item-image">`
-                                : `<div class="item-image-placeholder">📦</div>`
-                            }
-                        </div>
-                        <div class="item-info">
-                            <span class="item-name" title="${item.name}">${
-              item.name
-            }</span>
-                            <div class="item-counter">
-                                <span class="count">${count}</span>
-                                <span class="value">${value.toLocaleString()} silver</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-          })
-          .join("");
-      }
-
-      function updateSessionDuration() {
-        if (sessionStartTime) {
-          const now = new Date();
-          const diff = now.getTime() - sessionStartTime.getTime();
-          const minutes = Math.floor(diff / 60000);
-          const seconds = Math.floor((diff % 60000) / 1000);
-          document.getElementById(
-            "sessionDuration"
-          ).textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-        }
-      }
-
-      // Update duration every second
-      setInterval(updateSessionDuration, 1000);
-
-      // Also update immediately
-      updateSessionDuration();
-
-      // Initial setup
-      document.addEventListener("DOMContentLoaded", () => {
-        if (currentData) {
-          updateOverlay(currentData);
-        }
+      // Prevent context menu refresh option
+      document.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        return false;
       });
     </script>
+    <script src="overlay.js"></script>
   </body>
 </html>

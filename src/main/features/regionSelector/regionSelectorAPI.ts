@@ -42,7 +42,7 @@ export const regionSelectorHandlers = {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, 'regionSelectorPreload.js'),
+          preload: path.join(__dirname, '../../core/preload.js'),
         },
       });
 

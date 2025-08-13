@@ -1,5 +1,5 @@
-import { ipcMain } from 'electron';
-import { locationService } from '../services/db/locations';
+import { IpcMainInvokeEvent, ipcMain } from 'electron';
+import { locationService } from '../../services/db/locations';
 
 // Setup location IPC handlers
 export function setupLocationHandlers() {
