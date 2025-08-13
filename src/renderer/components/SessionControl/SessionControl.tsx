@@ -3,6 +3,7 @@ import { UserPreferences, Location, Item, LootTable, TaxCalculations } from "../
 import { useModal } from "../../contexts/ModalContext";
 import { TAX_CONSTANTS } from "../../constants/taxes";
 import { calculatePostTaxValue } from "../../utils/taxCalculations";
+import { SearchableSelect } from "../SearchableSelect";
 import "./SessionControl.css";
 
 interface SessionControlProps {
@@ -964,31 +965,22 @@ export const SessionControl: React.FC<SessionControlProps> = ({
             <label htmlFor='location-select' className='location-label'>
               Select Grinding Location:
             </label>
-            <select
-              id='location-select'
-              value={selectedLocation?.id || ""}
-              onChange={(e) => {
-                const locationId = parseInt(e.target.value);
-                const location =
-                  locations.find((l) => l.id === locationId) || null;
-                setSelectedLocation(location);
-              }}
-              className='location-dropdown'
+            <SearchableSelect
+              options={locations.filter(location => locationLootTables.get(location.id) || false)}
+              value={selectedLocation}
+              onChange={setSelectedLocation}
+              placeholder="Choose a location..."
               disabled={loading}
-            >
-              <option value=''>
-                {loading ? "Loading locations..." : "Choose a location..."}
-              </option>
-              {locations
-                .filter(
-                  (location) => locationLootTables.get(location.id) || false
-                )
-                .map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name} (AP: {location.ap}, DP: {location.dp})
-                  </option>
-                ))}
-            </select>
+              loading={loading}
+              getDisplayValue={(location) => `${location.name} (AP: ${location.ap}, DP: ${location.dp})`}
+              getOptionDisplay={(location) => ({
+                primary: location.name,
+                secondary: `AP: ${location.ap}, DP: ${location.dp}`
+              })}
+              searchFunction={(location, searchTerm) => 
+                location.name.toLowerCase().includes(searchTerm.toLowerCase())
+              }
+            />
           </div>
 
           {selectedLocation && (

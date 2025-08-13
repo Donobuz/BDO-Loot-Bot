@@ -242,7 +242,8 @@
   border-radius: 12px;
   width: 95%;
   max-width: 1000px;
-  max-height: 85vh;
+  max-height: 90vh; /* Increased from 85vh */
+  min-height: 600px; /* Added minimum height for better dropdown space */
   overflow: hidden;
 }
 
@@ -289,7 +290,8 @@
 .modal-content-full {
   padding: 24px;
   overflow-y: auto;
-  max-height: calc(85vh - 100px);
+  max-height: calc(90vh - 120px); /* Adjusted for increased modal height */
+  min-height: 400px; /* Added minimum height for better SearchableSelect space */
 }
 
 .item-selector {
@@ -321,7 +323,48 @@
 .modal-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: stretch;
+}
+
+.modal-actions .btn {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 14px;
+}
+
+.modal-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-primary, #ffffff);
+}
+
+.modal-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.modal-actions .btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.modal-actions .btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.6);
+}
+
+.modal-actions .btn-primary:disabled {
+  background: rgba(37, 99, 235, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .cancel-btn {
@@ -420,6 +463,18 @@
   display: flex;
   gap: 12px;
   align-items: flex-end;
+  margin-bottom: 20px; /* Added margin for SearchableSelect dropdown space */
+}
+
+/* SearchableSelect specific styling in modal */
+.add-item-section .searchable-select {
+  flex: 1;
+  min-width: 0; /* Ensure it can shrink properly */
+}
+
+.add-item-section .searchable-select .options-list {
+  max-height: 250px; /* Increased dropdown height for better visibility */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* Better shadow for modal context */
 }
 
 .item-select-wide {

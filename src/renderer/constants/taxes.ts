@@ -16,6 +16,6 @@ export const TAX_CONSTANTS = {
   ],
 
   // Maximum family fame value and bonus
-  MAX_FAMILY_FAME: 15000, // Maximum family fame value (increased to realistic max)
+  MAX_FAMILY_FAME: 7000, // Maximum useful family fame value (7000+ gives max bonus)
   MAX_FAMILY_FAME_BONUS: 0.015, // 1.5%
 };

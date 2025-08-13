@@ -317,7 +317,7 @@ const LocationManagement: React.FC = () => {
                             Edit
                           </button>
                           <button
-                            className="btn btn-small btn-warning"
+                            className="btn btn-small btn-danger"
                             onClick={() => handleArchive(location)}
                           >
                             Archive

@@ -3,6 +3,7 @@ import { UserPreferences, TaxCalculations } from '../../types';
 import { BDO_REGIONS } from '../../constants/regions';
 import { TAX_CONSTANTS } from '../../constants/taxes';
 import { formatTaxRate } from '../../utils/taxCalculations';
+import Modal from '../Modal/Modal';
 import './UserSettingsModal.css';
 
 interface OCRRegion {
@@ -54,22 +55,6 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
       family_fame: currentPreferences.tax_calculations?.family_fame || 0
     });
   }, [currentPreferences]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      // Store original overflow style
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      
-      // Prevent scrolling
-      document.body.style.overflow = 'hidden';
-      
-      // Cleanup function to restore scrolling
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
-  }, [isOpen]);
 
   // Focus on specific section when modal opens
   useEffect(() => {
@@ -223,105 +208,105 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content user-settings-modal" onClick={e => e.stopPropagation()}>
-        <div className="user-modal-header">
-          <h2>User Settings</h2>
-          <button className="close-button" onClick={onClose}>×</button>
-        </div>
-        
+    <Modal 
+      isOpen={isOpen} 
+      onClose={handleCancel} 
+      title="User Settings"
+      width="720px"
+    >
+      <div className="user-modal-container">
+        {/* Scrollable content */}
         <div className="user-modal-body">
-          <div className="settings-section">
-            <h3>Default Region</h3>
-            <p className="setting-description">
-              Region for grind sessions and accurate market pricing for loot.
-            </p>
-            
-            <div className="dropdown-container">
-              <select
-                value={preferredRegion}
-                onChange={(e) => setPreferredRegion(e.target.value)}
+        <div className="settings-section">
+          <h3>Default Region</h3>
+          <p className="setting-description">
+            Region for grind sessions and accurate market pricing for loot.
+          </p>
+          
+          <div className="dropdown-container">
+            <select
+              value={preferredRegion}
+              onChange={(e) => setPreferredRegion(e.target.value)}
+              disabled={isLoading || saving}
+              className="region-dropdown"
+            >
+              {BDO_REGIONS.map(region => (
+                <option key={region.value} value={region.value}>
+                  {region.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <h3>Display Regions</h3>
+          <p className="setting-description">
+            Select which regions to show in statistics and data aggregation
+          </p>
+          
+          <div className="checkbox-grid">
+            {/* ALL option - special styling */}
+            <label 
+              className="checkbox-item all-regions modern-checkbox"
+              style={{ cursor: isLoading || saving ? 'not-allowed' : 'pointer' }}
+            >
+              <input
+                type="checkbox"
+                checked={displayRegions.includes('ALL')}
+                onChange={() => handleDisplayRegionToggle('ALL')}
                 disabled={isLoading || saving}
-                className="region-dropdown"
-              >
-                {BDO_REGIONS.map(region => (
-                  <option key={region.value} value={region.value}>
-                    {region.label}
-                  </option>
-                ))}
-              </select>
+              />
+              <span className="checkbox-text">
+                <span className="checkbox-label">All Regions</span>
+                <span className="checkbox-sublabel">Aggregate data from all regions</span>
+              </span>
+            </label>
+
+            {/* Separator */}
+            <div className="separator">
+              <hr />
+              <span>Individual Regions</span>
+            </div>
+
+            {/* Individual regions - grid layout */}
+            <div className="individual-regions">
+              {BDO_REGIONS.map(region => (
+                <label 
+                  key={region.value} 
+                  className="checkbox-item modern-checkbox"
+                  style={{ cursor: isLoading || saving ? 'not-allowed' : 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={displayRegions.includes(region.value)}
+                    onChange={() => handleDisplayRegionToggle(region.value)}
+                    disabled={isLoading || saving}
+                  />
+                  <span className="checkbox-text">
+                    <span className="checkbox-label">{region.label}</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
+        </div>
 
-          <div className="settings-section">
-            <h3>Display Regions</h3>
-            <p className="setting-description">
-              Select which regions to show in statistics and data aggregation
-            </p>
-            
-            <div className="checkbox-grid">
-              {/* ALL option - special styling */}
-              <label 
-                className="checkbox-item all-regions modern-checkbox"
-                style={{ cursor: isLoading || saving ? 'not-allowed' : 'pointer' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={displayRegions.includes('ALL')}
-                  onChange={() => handleDisplayRegionToggle('ALL')}
-                  disabled={isLoading || saving}
-                />
-                <span className="checkbox-text">
-                  <span className="checkbox-label">All Regions</span>
-                  <span className="checkbox-sublabel">Aggregate data from all regions</span>
-                </span>
-              </label>
+        {/* Modern HR separator */}
+        <div className="settings-separator">
+          <hr />
+        </div>
 
-              {/* Separator */}
-              <div className="separator">
-                <hr />
-                <span>Individual Regions</span>
-              </div>
-
-              {/* Individual regions - grid layout */}
-              <div className="individual-regions">
-                {BDO_REGIONS.map(region => (
-                  <label 
-                    key={region.value} 
-                    className="checkbox-item modern-checkbox"
-                    style={{ cursor: isLoading || saving ? 'not-allowed' : 'pointer' }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={displayRegions.includes(region.value)}
-                      onChange={() => handleDisplayRegionToggle(region.value)}
-                      disabled={isLoading || saving}
-                    />
-                    <span className="checkbox-text">
-                      <span className="checkbox-label">{region.label}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Modern HR separator */}
-          <div className="settings-separator">
-            <hr />
-          </div>
-
-          <div className="settings-section">
-            <h3>Tax Calculations</h3>
-            <p className="setting-description">
-              Configure your marketplace tax modifiers for accurate post-tax value calculations.
-            </p>
-            
-            <div className="tax-settings-grid">
-              <div className="tax-checkboxes">
+        <div className="settings-section">
+          <h3>Tax Calculations</h3>
+          <p className="setting-description">
+            Configure your marketplace tax modifiers for accurate post-tax value calculations.
+          </p>
+          
+          <div className="user-settings-tax-grid">
+            <div className="tax-checkboxes">
+              <div className="tax-card">
                 <label className="checkbox-item modern-checkbox">
                   <input
                     type="checkbox"
@@ -334,7 +319,9 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                     <span className="checkbox-sublabel">{formatTaxRate(TAX_CONSTANTS.VALUE_PACK_BONUS)} bonus on post-tax amount</span>
                   </span>
                 </label>
+              </div>
 
+              <div className="tax-card">
                 <label className="checkbox-item modern-checkbox">
                   <input
                     type="checkbox"
@@ -348,64 +335,66 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                   </span>
                 </label>
               </div>
-
-              <div className="family-fame-input">
-                <label className="input-label">
-                  <div className="input-info">
-                    <span className="input-title">Family Fame</span>
-                    <span className="input-description">Trading fame value (0-{TAX_CONSTANTS.MAX_FAMILY_FAME}, up to {formatTaxRate(TAX_CONSTANTS.MAX_FAMILY_FAME_BONUS)} bonus)</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={taxCalculations.family_fame}
-                    onChange={handleFamilyFameChange}
-                    disabled={isLoading || saving}
-                    placeholder={`Enter fame (max ${TAX_CONSTANTS.MAX_FAMILY_FAME})`}
-                    className="fame-input"
-                  />
-                </label>
-              </div>
             </div>
-          </div>
 
-          {/* Modern HR separator */}
-          <div className="settings-separator">
-            <hr />
-          </div>
-
-          <div className="settings-section ocr-region-section">
-            <h3>Loot Detection Region</h3>
-            <p className="setting-description">
-              Select the area of your screen where loot messages appear for automatic detection during grind sessions.
-            </p>
-            
-            <div className="ocr-region-controls">
-              <div className={`ocr-region-display ${ocrRegion ? 'has-region' : ''}`}>
-                {formatRegionDisplay(ocrRegion)}
-              </div>
-              
-              <div className="ocr-region-buttons">
-                <button
-                  className="select-region-button"
-                  onClick={handleSelectRegion}
-                  disabled={selectingRegion || saving || isLoading}
-                >
-                  {selectingRegion ? 'Selecting...' : 'Select Region'}
-                </button>
-                
-                <button
-                  className="clear-region-button"
-                  onClick={handleClearRegion}
-                  disabled={!ocrRegion || saving || isLoading}
-                >
-                  Clear Region
-                </button>
-              </div>
+            <div className="tax-card family-fame-card">
+              <label className="input-label">
+                <div className="input-info">
+                  <span className="input-title">Family Fame</span>
+                  <span className="input-description">Trading fame value (7000+ for max {formatTaxRate(TAX_CONSTANTS.MAX_FAMILY_FAME_BONUS)} bonus)</span>
+                </div>
+                <input
+                  type="text"
+                  value={taxCalculations.family_fame}
+                  onChange={handleFamilyFameChange}
+                  disabled={isLoading || saving}
+                  placeholder={`Enter fame (max ${TAX_CONSTANTS.MAX_FAMILY_FAME})`}
+                  className="fame-input"
+                />
+              </label>
             </div>
           </div>
         </div>
 
-        <div className="user-modal-footer">
+        {/* Modern HR separator */}
+        <div className="settings-separator">
+          <hr />
+        </div>
+
+        <div className="settings-section ocr-region-section">
+          <h3>Loot Detection Region</h3>
+          <p className="setting-description">
+            Select the area of your screen where loot messages appear for automatic detection during grind sessions.
+          </p>
+          
+          <div className="ocr-region-controls">
+            <div className={`ocr-region-display ${ocrRegion ? 'has-region' : ''}`}>
+              {formatRegionDisplay(ocrRegion)}
+            </div>
+            
+            <div className="ocr-region-buttons">
+              <button
+                className="select-region-button"
+                onClick={handleSelectRegion}
+                disabled={selectingRegion || saving || isLoading}
+              >
+                {selectingRegion ? 'Selecting...' : 'Select Region'}
+              </button>
+              
+              <button
+                className="clear-region-button"
+                onClick={handleClearRegion}
+                disabled={!ocrRegion || saving || isLoading}
+              >
+                Clear Region
+              </button>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        {/* Sticky action buttons at bottom */}
+        <div className="user-modal-header-actions">
           <button 
             className="cancel-button" 
             onClick={handleCancel}
@@ -422,6 +411,6 @@ export const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

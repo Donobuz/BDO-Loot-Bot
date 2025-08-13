@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ModalData, ConfirmationModalData, FormModalData, StatusModalData } from '../../contexts/ModalContext';
 import './Modal.css';
 
@@ -7,9 +7,26 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  width?: string; // Custom width override
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, width }) => {
+  // Prevent body scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Prevent body scrolling
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore body scrolling
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -20,7 +37,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div className="modal-container">
+      <div 
+        className="modal-container" 
+        style={width ? { width, maxWidth: '90vw' } : undefined}
+      >
         <div className="modal-header">
           <h3>{title}</h3>
           <button className="modal-close" onClick={onClose}>×</button>

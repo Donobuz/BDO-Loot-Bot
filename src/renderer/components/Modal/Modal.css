@@ -123,25 +123,13 @@
   max-height: 60vh;
   overflow-y: auto;
   background: rgba(30, 30, 46, 0.3);
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
 .modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: rgba(116, 130, 255, 0.3);
-  border-radius: 4px;
-  transition: background 0.2s ease;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(116, 130, 255, 0.5);
+  display: none; /* Chrome/Safari/WebKit */
 }
 
 /* Form styles inside modal */

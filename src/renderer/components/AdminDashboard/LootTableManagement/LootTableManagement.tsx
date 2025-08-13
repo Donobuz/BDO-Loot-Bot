@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LootTable, Location, Item } from '../../../types';
+import { SearchableSelect } from '../../SearchableSelect';
+import Modal from '../../Modal/Modal';
 import LocationSelector from './LocationSelector';
 import './LootTableManagement.css';
 
@@ -288,89 +290,84 @@ export default function LootTableManagement({}: LootTableManagementProps) {
       )}
 
       {/* Add Item Modal */}
-      {showAddItemModal && (
-        <div className="modal-overlay">
-          <div className="modal-full-width">
-            <div className="modal-header">
-              <h3>Add Items to Loot Table</h3>
-              <button 
-                onClick={() => {
-                  setShowAddItemModal(false);
-                  setStagedItems([]);
-                  setSelectedItemId(null);
+      <Modal 
+        isOpen={showAddItemModal} 
+        onClose={() => {
+          setShowAddItemModal(false);
+          setStagedItems([]);
+          setSelectedItemId(null);
+        }}
+        title="Add Items to Loot Table"
+        width="800px"
+      >
+        <div className="modal-content-full">
+          <div className="add-item-section">
+            <h4>Select Item to Add</h4>
+            <div className="item-selection-row">
+              <SearchableSelect
+                options={filteredAvailableItems}
+                value={null} // Always null since we reset after selection
+                onChange={(item) => {
+                  if (item) {
+                    addItemToStaging(item.id);
+                  }
                 }}
-                className="modal-close"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="modal-content-full">
-              <div className="add-item-section">
-                <h4>Select Item to Add</h4>
-                <div className="item-selection-row">
-                  <select 
-                    value={selectedItemId || ''} 
-                    onChange={(e) => {
-                      const itemId = e.target.value ? parseInt(e.target.value) : null;
-                      setSelectedItemId(itemId);
-                      if (itemId) {
-                        addItemToStaging(itemId);
-                        setSelectedItemId(null); // Reset selection after adding
-                      }
-                    }}
-                    className="item-select-wide"
-                  >
-                    <option value="">Select an item...</option>
-                    {filteredAvailableItems.map(item => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} (ID: {item.bdo_item_id}) - {item.type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {stagedItems.length > 0 && (
-                <div className="staging-section">
-                  <h4>Staged Items ({stagedItems.length})</h4>
-                  <div className="staged-items-grid">
-                    {stagedItems.map(item => (
-                      <div key={item.bdo_item_id} className="staged-item">
-                        <span className="staged-item-name">{item.name}</span>
-                        <span className="staged-item-details">(ID: {item.bdo_item_id}) - {item.type}</span>
-                        <button 
-                          onClick={() => removeItemFromStaging(item.bdo_item_id)}
-                          className="remove-staged-btn"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="modal-actions">
-                <button onClick={() => {
-                  setShowAddItemModal(false);
-                  setStagedItems([]);
-                  setSelectedItemId(null);
-                }} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button 
-                  onClick={addItemToLootTable} 
-                  disabled={stagedItems.length === 0}
-                  className="btn btn-primary"
-                >
-                  Add {stagedItems.length} Item{stagedItems.length !== 1 ? 's' : ''} to Loot Table
-                </button>
-              </div>
+                placeholder="Search and select an item to add..."
+                getDisplayValue={(item) => `${item.name} (${item.type})`}
+                getOptionDisplay={(item) => ({
+                  primary: item.name,
+                  secondary: `ID: ${item.bdo_item_id} • ${item.type} • ${item.base_price.toLocaleString()} silver`
+                })}
+                searchFunction={(item, searchTerm) => {
+                  const term = searchTerm.toLowerCase();
+                  return (
+                    item.name.toLowerCase().includes(term) ||
+                    item.type.toLowerCase().includes(term) ||
+                    item.bdo_item_id.toString().includes(term)
+                  );
+                }}
+              />
             </div>
           </div>
+
+          {stagedItems.length > 0 && (
+            <div className="staging-section">
+              <h4>Staged Items ({stagedItems.length})</h4>
+              <div className="staged-items-grid">
+                {stagedItems.map(item => (
+                  <div key={item.bdo_item_id} className="staged-item">
+                    <span className="staged-item-name">{item.name}</span>
+                    <span className="staged-item-details">(ID: {item.bdo_item_id}) - {item.type}</span>
+                    <button 
+                      onClick={() => removeItemFromStaging(item.bdo_item_id)}
+                      className="remove-staged-btn"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button onClick={() => {
+              setShowAddItemModal(false);
+              setStagedItems([]);
+              setSelectedItemId(null);
+            }} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button 
+              onClick={addItemToLootTable} 
+              disabled={stagedItems.length === 0}
+              className="btn btn-primary"
+            >
+              Add Item{stagedItems.length !== 1 ? 's' : ''}
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

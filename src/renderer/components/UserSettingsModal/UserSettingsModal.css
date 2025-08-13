@@ -1,11 +1,18 @@
 /* UserSettingsModal.css */
 @import "../../globals.css";
 
+/* Override Modal component styles for UserSettings */
+.modal-container:has(.user-modal-container) .modal-body {
+  padding: 0;
+  max-height: none;
+  overflow: hidden;
+  height: 100%;
+}
+
 .user-settings-modal {
   max-width: 600px;
   width: 90vw;
   max-height: 80vh;
-  overflow-y: auto;
 }
 
 .modal-overlay {
@@ -96,9 +103,100 @@
 }
 
 .user-modal-body {
-  padding: 24px;
+  padding: 24px 24px 100px 24px;
   flex: 1;
   overflow-y: auto;
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.user-modal-body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/WebKit */
+}
+
+.user-modal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 70vh;
+  position: relative;
+}
+
+.user-modal-header-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-top: auto;
+}
+
+.user-modal-header-actions .cancel-button,
+.user-modal-header-actions .save-button {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.user-modal-header-actions .cancel-button {
+  background: var(--input-bg, #2f3136);
+  border: 2px solid var(--input-border, #40444b);
+  color: var(--text-primary);
+}
+
+.user-modal-header-actions .cancel-button:hover {
+  background: var(--input-hover-bg, #36393f);
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+.user-modal-header-actions .cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.user-modal-header-actions .save-button {
+  background: var(--discord-primary);
+  border: 2px solid var(--discord-primary);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+}
+
+.user-modal-header-actions .save-button:hover {
+  background: var(--discord-hover);
+  border-color: var(--discord-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.6);
+}
+
+.user-modal-header-actions .save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive: Stack buttons vertically on smaller screens */
+@media (max-width: 480px) {
+  .user-modal-header-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .user-modal-header-actions .cancel-button,
+  .user-modal-header-actions .save-button {
+    width: 100%;
+  }
 }
 
 .settings-section {
@@ -549,31 +647,58 @@
 }
 
 /* Tax calculation settings */
-.tax-settings-grid {
+.user-settings-tax-grid {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
 .tax-checkboxes {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-lg);
-  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
 }
 
-.tax-checkboxes .checkbox-item {
-  flex: 1;
-  min-width: 200px;
-}
-
-.family-fame-input {
+.tax-card {
+  background: linear-gradient(135deg, rgba(67, 181, 129, 0.05) 0%, rgba(67, 181, 129, 0.02) 100%);
+  border: 2px solid rgba(67, 181, 129, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  transition: all 0.2s ease;
+  min-height: 120px;
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-sm);
 }
 
-.input-label {
+.tax-card:hover {
+  border-color: rgba(67, 181, 129, 0.5);
+  background: linear-gradient(135deg, rgba(67, 181, 129, 0.08) 0%, rgba(67, 181, 129, 0.04) 100%);
+}
+
+.tax-card .checkbox-item {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  width: 100%;
+}
+
+.tax-card .modern-checkbox {
+  padding: 0;
+  min-height: auto;
+}
+
+.family-fame-card {
+  width: 100%;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  min-height: 80px;
+}
+
+.family-fame-card .input-label {
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
