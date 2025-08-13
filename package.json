@@ -11,7 +11,12 @@
     "build-renderer": "webpack",
     "build-main": "webpack --config webpack.main.config.js",
     "build": "npm run build-renderer && npm run build-main",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test-ocr": "echo 'OCR is bundled with the application - no external dependencies required!'",
+    "dist": "npm run build && electron-builder",
+    "dist-win": "npm run build && electron-builder --win",
+    "dist-mac": "npm run build && electron-builder --mac",
+    "dist-linux": "npm run build && electron-builder --linux"
   },
   "keywords": [
     "electron",
@@ -43,6 +48,7 @@
     "concurrently": "^9.2.0",
     "css-loader": "^7.1.2",
     "electron": "^37.2.1",
+    "electron-builder": "^26.0.12",
     "electron-rebuild": "^3.2.9",
     "html-webpack-plugin": "^5.6.3",
     "rimraf": "^6.0.1",

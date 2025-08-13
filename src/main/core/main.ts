@@ -10,6 +10,7 @@ import { userHandlers, userPreferencesHandlers } from '../api/userAPI';
 import { regionSelectorHandlers } from '../features/regionSelector/regionSelectorAPI';
 import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
 import { sessionEventHandlers } from '../api/sessionEventAPI';
+import { ocrAPI } from '../api/ocrAPI';
 import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
@@ -164,6 +165,11 @@ Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
 
 // Setup session event handlers
 Object.entries(sessionEventHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup OCR handlers
+Object.entries(ocrAPI).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

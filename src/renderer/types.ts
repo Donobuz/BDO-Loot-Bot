@@ -251,8 +251,51 @@ declare global {
         reason: string;
         timestamp: string;
       }) => void) => void;
+      ocr: {
+        extractText: (imagePath: string, region?: OCRRegion) => Promise<OCRResult>;
+        extractItems: (imagePath: string, region?: OCRRegion) => Promise<ItemExtractionResult>;
+        installDependencies: () => Promise<{ success: boolean; error?: string }>;
+        isReady: () => Promise<boolean>;
+        initialize: () => Promise<{ success: boolean; error?: string }>;
+      };
     };
   }
+}
+
+// OCR types
+export interface OCRRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface OCRResult {
+  success: boolean;
+  results?: Array<{
+    text: string;
+    confidence: number;
+    bbox: number[][];
+  }>;
+  processing_time?: number;
+  total_text?: string;
+  error?: string;
+}
+
+export interface ItemExtractionResult {
+  success: boolean;
+  items?: Array<{
+    name: string;
+    confidence: number;
+    bbox: number[][];
+  }>;
+  processing_time?: number;
+  raw_results?: Array<{
+    text: string;
+    confidence: number;
+    bbox: number[][];
+  }>;
+  error?: string;
 }
 
 // Database types

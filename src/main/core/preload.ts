@@ -99,5 +99,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onSessionCleanup: (callback: (data: any) => void) => {
     ipcRenderer.on('session-cleanup', (event, data) => callback(data));
+  },
+
+  // OCR API
+  ocr: {
+    extractText: (imagePath: string, region?: any) => ipcRenderer.invoke('ocr-extract-text', imagePath, region),
+    extractItems: (imagePath: string, region?: any) => ipcRenderer.invoke('ocr-extract-items', imagePath, region),
+    installDependencies: () => ipcRenderer.invoke('ocr-install-dependencies'),
+    isReady: () => ipcRenderer.invoke('ocr-is-ready'),
+    initialize: () => ipcRenderer.invoke('ocr-initialize'),
   }
 });
