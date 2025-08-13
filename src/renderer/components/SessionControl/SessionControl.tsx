@@ -474,10 +474,12 @@ export const SessionControl: React.FC<SessionControlProps> = ({
       }
     }
     
+    // Reset session state and close tax breakdown accordion
     setSession({ 
       isActive: false, 
       itemCounts: new Map() 
     });
+    setShowTaxBreakdown(false);
   };
 
   const handleOpenStreamingOverlay = async () => {
@@ -748,6 +750,10 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                         </div>
                       )}
                       
+                      {(breakdown.nonTaxableValue > 0 && breakdown.taxableGrossValue > 0) && (
+                        <div className='breakdown-divider'></div>
+                      )}
+                      
                       {breakdown.taxableGrossValue > 0 && (
                         <>
                           <div className='breakdown-row taxable'>
@@ -785,30 +791,26 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                               })()} silver</span>
                             </div>
                           )}
-                          <div className='breakdown-row taxable-subtotal'>
-                            <span className='breakdown-label'>  Marketplace & Conversion Subtotal:</span>
-                            <span className='breakdown-value'>{breakdown.taxablePostTaxValue.toLocaleString()} silver</span>
-                          </div>
-                        </>
-                      )}
-                      
-                      {(breakdown.nonTaxableValue > 0 && breakdown.taxableGrossValue > 0) && (
-                        <div className='breakdown-divider'></div>
-                      )}
-                      
-                      {breakdown.grossValue > 0 && (
-                        <>
-                          <div className='breakdown-row final-total'>
-                            <span className='breakdown-label'>Final Total:</span>
-                            <span className='breakdown-value'>{breakdown.postTaxValue.toLocaleString()} silver</span>
-                          </div>
-                          {breakdown.taxableGrossValue > 0 && (
-                            <div className='breakdown-row effective-rate'>
-                              <span className='breakdown-label'>Tax Savings on Taxable Items:</span>
-                              <span className='breakdown-value'>{(65 - breakdown.effectiveTaxRate).toFixed(1)}%</span>
-                            </div>
+                          {(breakdown.bonuses.valuePack || breakdown.bonuses.richMerchantRing || breakdown.bonuses.familyFame > 0) && (
+                            <>
+                              <div className='breakdown-row taxable-subtotal'>
+                                <span className='breakdown-label'>  Marketplace & Conversion Subtotal:</span>
+                                <span className='breakdown-value'>{breakdown.taxablePostTaxValue.toLocaleString()} silver</span>
+                              </div>
+                              <div className='breakdown-row effective-rate'>
+                                <span className='breakdown-label'>Tax Savings on Taxable Items:</span>
+                                <span className='breakdown-value'>{(65 - breakdown.effectiveTaxRate).toFixed(1)}%</span>
+                              </div>
+                            </>
                           )}
                         </>
+                      )}
+                      
+                      {breakdown.postTaxValue > 0 && (
+                        <div className='breakdown-row final-total'>
+                          <span className='breakdown-label'>Final Total:</span>
+                          <span className='breakdown-value'>{breakdown.postTaxValue.toLocaleString()} silver</span>
+                        </div>
                       )}
                       
                       {breakdown.grossValue === 0 && (
