@@ -215,8 +215,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       <main className='dashboard-content'>
         <div className='welcome-section'>
-          <h1>BDO Loot Detection</h1>
-          <p>Automatically track your loot drops during grinding sessions</p>
+          <h1>BDO Loot Ledger</h1>
+          <p>Automatically track your drops during a grind session</p>
         </div>
 
         <div className='main-session-area'>
