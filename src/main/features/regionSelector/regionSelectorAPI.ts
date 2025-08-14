@@ -1,4 +1,4 @@
-import { IpcMainInvokeEvent, BrowserWindow, screen, desktopCapturer } from 'electron';
+import { IpcMainInvokeEvent, BrowserWindow, screen, ipcMain } from 'electron';
 import * as path from 'path';
 
 interface OCRRegion {
@@ -59,7 +59,6 @@ export const regionSelectorHandlers = {
         let resolved = false;
 
         // Listen for IPC messages from the renderer
-        const ipcMain = require('electron').ipcMain;
         
         const regionSelectedHandler = (event: any, data: any) => {
           if (resolved || event.sender !== regionSelectorWindow?.webContents) return;

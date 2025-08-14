@@ -69,7 +69,7 @@
   left: 0;
   right: 0;
   background: var(--input-bg, #2f3136);
-  border: none;
+  border-top: none;
   border-bottom-left-radius: 6px;
   border-bottom-right-radius: 6px;
   max-height: 200px;
