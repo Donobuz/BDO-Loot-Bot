@@ -21,8 +21,6 @@ const cleanupSession = async () => {
   // Close streaming overlay if open
   cleanupStreamingOverlay();
   
-  // Stop simple OCR if running (the simple system handles its own cleanup)
-  // No additional cleanup needed for Simple OCR system
   
   // Broadcast cleanup event to all windows
   const allWindows = BrowserWindow.getAllWindows();
@@ -165,8 +163,6 @@ Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
 });
 
 app.whenReady().then(() => {
-  console.log('🚀 Starting BDO Loot Bot...');
-  
   createWindow();
 
   app.on('activate', () => {
