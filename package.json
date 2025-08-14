@@ -12,7 +12,6 @@
     "build-main": "webpack --config webpack.main.config.js",
     "build": "npm run build-renderer && npm run build-main",
     "clean": "rimraf dist",
-    "test-ocr": "echo 'OCR is bundled with the application - no external dependencies required!'",
     "dist": "npm run build && electron-builder",
     "dist-win": "npm run build && electron-builder --win",
     "dist-mac": "npm run build && electron-builder --mac",
@@ -37,7 +36,6 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sharp": "^0.34.3",
-    "tesseract.js": "^6.0.1",
     "utf-8-validate": "^6.0.5",
     "uuid": "^11.1.0"
   },
@@ -59,5 +57,38 @@
     "wait-on": "^8.0.3",
     "webpack": "^5.100.0",
     "webpack-cli": "^6.0.1"
+  },
+  "build": {
+    "appId": "com.bdolootbot.app",
+    "productName": "BDO Loot Bot",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/sharp/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

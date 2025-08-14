@@ -9,9 +9,6 @@ import { lootTableHandlers } from '../api/lootTableAPI';
 import { userHandlers, userPreferencesHandlers } from '../api/userAPI';
 import { regionSelectorHandlers } from '../features/regionSelector/regionSelectorAPI';
 import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
-import { sessionEventHandlers } from '../api/sessionEventAPI';
-import { ocrAPI } from '../api/ocrAPI';
-import { continuousOCRHandlers, cleanupContinuousOCR } from '../api/continuousOcrAPI';
 import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
@@ -24,8 +21,8 @@ const cleanupSession = async () => {
   // Close streaming overlay if open
   cleanupStreamingOverlay();
   
-  // Stop continuous OCR if running
-  await cleanupContinuousOCR();
+  // Stop simple OCR if running (the simple system handles its own cleanup)
+  // No additional cleanup needed for Simple OCR system
   
   // Broadcast cleanup event to all windows
   const allWindows = BrowserWindow.getAllWindows();
@@ -167,22 +164,9 @@ Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 
-// Setup session event handlers
-Object.entries(sessionEventHandlers).forEach(([event, handler]) => {
-  ipcMain.handle(event, handler);
-});
-
-// Setup OCR handlers
-Object.entries(ocrAPI).forEach(([event, handler]) => {
-  ipcMain.handle(event, handler);
-});
-
-// Setup continuous OCR handlers
-Object.entries(continuousOCRHandlers).forEach(([event, handler]) => {
-  ipcMain.handle(event, handler);
-});
-
 app.whenReady().then(() => {
+  console.log('🚀 Starting BDO Loot Bot...');
+  
   createWindow();
 
   app.on('activate', () => {

@@ -1,1 +1,0 @@
-# BDO Loot Ledger

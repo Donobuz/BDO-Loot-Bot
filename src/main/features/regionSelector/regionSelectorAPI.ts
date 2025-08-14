@@ -64,9 +64,9 @@ export const regionSelectorHandlers = {
         const regionSelectedHandler = (event: any, data: any) => {
           if (resolved || event.sender !== regionSelectorWindow?.webContents) return;
           
-          // Validate minimum size
-          const minWidth = 300;
-          const minHeight = 100;
+          // Validate minimum size for loot UI
+          const minWidth = 250;
+          const minHeight = 250;
           if (data.width < minWidth || data.height < minHeight) {
             console.log(`Region too small: ${data.width}×${data.height}, minimum required: ${minWidth}×${minHeight}`);
             return; // Don't resolve, let user try again

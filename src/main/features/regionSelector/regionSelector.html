@@ -97,8 +97,8 @@
     <div class="selection-box" id="selectionBox"></div>
     
     <div class="instructions">
-        Click and drag to select the area where loot messages appear<br>
-        <small style="opacity: 0.8;">Minimum size: 300×300 pixels for readable text</small>
+        Click and drag to select the BDO loot collector UI area<br>
+        <small style="opacity: 0.8;">Minimum size: 250×250 pixels for the loot queue</small>
     </div>
     
     <div class="coordinates" id="coordinates">
@@ -164,8 +164,8 @@
             const width = Math.abs(currentX - startX);
             const height = Math.abs(currentY - startY);
             
-            const minWidth = 300;
-            const minHeight = 300;
+            const minWidth = 250;
+            const minHeight = 250;
             const isValidSize = width >= minWidth && height >= minHeight;
             
             selectionBox.style.left = left + 'px';
@@ -196,9 +196,9 @@
             const width = Math.abs(currentX - startX);
             const height = Math.abs(currentY - startY);
             
-            // Minimum size check (300x300 minimum for readable chat text)
-            const minWidth = 300;
-            const minHeight = 300;
+            // Minimum size check (250x250 minimum for loot UI)
+            const minWidth = 250;
+            const minHeight = 250;
             
             if (width < minWidth || height < minHeight) {
                 selectionBox.style.display = 'none';

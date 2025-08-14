@@ -247,77 +247,17 @@ declare global {
       onStreamingOverlayClosed: (callback: () => void) => void;
       onStreamingOverlayFocused: (callback: () => void) => void;
       onStreamingOverlayBlurred: (callback: () => void) => void;
-      onSessionCleanup: (callback: (data: {
-        reason: string;
-        timestamp: string;
-      }) => void) => void;
-      ocr: {
-        extractText: (imagePath: string, region?: OCRRegion) => Promise<OCRResult>;
-        extractItems: (imagePath: string, region?: OCRRegion) => Promise<ItemExtractionResult>;
-        installDependencies: () => Promise<{ success: boolean; error?: string }>;
-        isReady: () => Promise<boolean>;
-        initialize: () => Promise<{ success: boolean; error?: string }>;
-      };
-      continuousOCR: {
-        start: (config: { 
-          region: OCRRegion; 
-          interval?: number; 
-          outputFileName?: string 
-        }) => Promise<{ 
-          success: boolean; 
-          outputPath?: string; 
-          error?: string 
-        }>;
-        stop: () => Promise<{ success: boolean; error?: string }>;
-        getStatus: () => Promise<{ 
-          success: boolean; 
-          isRunning: boolean; 
-          stats?: { 
-            ocrCount: number; 
-            sessionDuration?: number; 
-            averageProcessingTime?: number 
-          };
-          error?: string 
-        }>;
-      };
     };
   }
 }
 
-// OCR types
+// OCR Region type for region selection
 export interface OCRRegion {
   x: number;
   y: number;
   width: number;
   height: number;
-}
-
-export interface OCRResult {
-  success: boolean;
-  results?: Array<{
-    text: string;
-    confidence: number;
-    bbox: number[][];
-  }>;
-  processing_time?: number;
-  total_text?: string;
-  error?: string;
-}
-
-export interface ItemExtractionResult {
-  success: boolean;
-  items?: Array<{
-    name: string;
-    confidence: number;
-    bbox: number[][];
-  }>;
-  processing_time?: number;
-  raw_results?: Array<{
-    text: string;
-    confidence: number;
-    bbox: number[][];
-  }>;
-  error?: string;
+  display?: string;
 }
 
 // Database types
@@ -421,4 +361,4 @@ export interface SessionLoot {
   timestamp: string;
 }
 
-export {}; // This makes the file a module
+export { }; // This makes the file a module
