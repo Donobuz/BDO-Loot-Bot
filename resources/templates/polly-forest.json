@@ -1,0 +1,76 @@
+{
+    "name": "Polly Forest",
+    "textFilters": {
+        "minConfidence": 0.4,
+        "allowedCharacters": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -'()[]",
+        "minLength": 3
+    },
+    "items": [
+        {
+            "name": "Polly's Feather",
+            "variations": ["Pollys Feather", "Polly Feather", "Polly's feather"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "polly.{0,2}s?.{0,2}feather",
+            "minSimilarity": 0.75,
+            "value": 2500
+        },
+        {
+            "name": "Black Stone (Weapon)",
+            "variations": ["Black Stone Weapon", "Blackstone Weapon", "Black Stone(Weapon)"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "black.{0,3}stone.{0,3}weapon",
+            "minSimilarity": 0.8,
+            "value": 195000
+        },
+        {
+            "name": "Black Stone (Armor)",
+            "variations": ["Black Stone Armor", "Blackstone Armor", "Black Stone(Armor)"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "black.{0,3}stone.{0,3}armor",
+            "minSimilarity": 0.8,
+            "value": 285000
+        },
+        {
+            "name": "Rough Black Crystal",
+            "variations": ["Rough Blackcrystal", "Rough Black crystal"],
+            "value": 1200
+        },
+        {
+            "name": "Hard Black Crystal Shard",
+            "variations": ["Hard Black Crystal shard", "Hard Blackcrystal Shard"],
+            "value": 2250
+        },
+        {
+            "name": "Sharp Black Crystal Shard",
+            "variations": ["Sharp Black Crystal shard", "Sharp Blackcrystal Shard"],
+            "value": 2250
+        },
+        {
+            "name": "Pure Powder Reagent",
+            "variations": ["Pure powder Reagent", "Pure Powder reagent"],
+            "value": 1350
+        },
+        {
+            "name": "Clear Liquid Reagent",
+            "variations": ["Clear liquid Reagent", "Clear Liquid reagent"],
+            "value": 1350
+        }
+    ],
+    "patterns": [
+        {
+            "type": "quantity",
+            "regex": "^(\\d+)x\\s+(.+)$",
+            "groups": ["quantity", "item"]
+        },
+        {
+            "type": "quantity",
+            "regex": "^(.+)\\s+x(\\d+)$",
+            "groups": ["item", "quantity"]
+        },
+        {
+            "type": "silver",
+            "regex": "Silver:\\s+(\\d+)",
+            "groups": ["amount"]
+        }
+    ]
+}

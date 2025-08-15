@@ -100,7 +100,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   };
 
   // Pagination with Load More
-  const totalPages = Math.ceil(filteredAndSortedLocations.length / itemsPerPage);
+  // const totalPages = Math.ceil(filteredAndSortedLocations.length / itemsPerPage);
   const startIndex = 0; // Always start from beginning
   const endIndex = currentPage * itemsPerPage;
   const paginatedLocations = filteredAndSortedLocations.slice(startIndex, endIndex);

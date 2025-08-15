@@ -3,7 +3,6 @@
  * This file demonstrates how to use the tax calculation utilities
  */
 
-import { TAX_CONSTANTS } from '../constants/taxes';
 import {
   calculateEffectiveTaxRate,
   calculatePostTaxValue,

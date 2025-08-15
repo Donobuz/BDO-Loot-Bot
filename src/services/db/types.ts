@@ -111,3 +111,54 @@ export interface AuthData {
   user: User;
   loginTime: string;
 }
+
+// === UPDATE INTERFACES ===
+// These replace Partial<Omit<T, 'readonly_fields'>> patterns
+
+export interface UserUpdate {
+  username?: string;
+  avatar?: string;
+  permissions?: string[];
+}
+
+export interface UserPreferencesUpdate {
+  preferred_region?: string;
+  display_regions?: string[];
+  designated_ocr_region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    display?: string;
+  } | null;
+  tax_calculations?: TaxCalculations | null;
+}
+
+export interface LocationUpdate {
+  name?: string;
+  ap?: number;
+  total_ap?: number;
+  dp?: number;
+  monster_type?: string;
+  archived?: string;
+}
+
+export interface ItemUpdate {
+  name?: string;
+  bdo_item_id?: number;
+  base_price?: number;
+  last_sold_price?: number;
+  loot_table_ids?: number[];
+  region?: string | null;
+  image_url?: string | null;
+  archived?: string | null;
+  type?: ItemType;
+  convertible_to_bdo_item_id?: number | null;
+  conversion_ratio?: number;
+}
+
+export interface LootTableUpdate {
+  location_id?: number;
+  item_ids?: number[];
+  archived?: string | null;
+}

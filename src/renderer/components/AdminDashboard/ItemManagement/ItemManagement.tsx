@@ -795,52 +795,6 @@ const ItemManagement: React.FC = () => {
     setImageUploadError(null);
   };
 
-  const handleImageRemoved = async () => {
-    if (editingItem?.id) {
-      try {
-        const result = await window.electronAPI.items.removeImage(editingItem.id);
-        if (result.success) {
-          await loadItems(); // Refresh the items list
-          // Update the editing item to reflect the change
-          setEditingItem(prev => prev ? { ...prev, image_url: undefined } : null);
-        } else {
-          setImageUploadError(result.error || 'Failed to remove image');
-        }
-      } catch (error) {
-        console.error('Error removing image:', error);
-        setImageUploadError('An error occurred while removing the image');
-      }
-    }
-    setPendingImage(null);
-  };
-
-  const handleImageUpload = async (itemId: number, processedImage: ProcessedImage) => {
-    try {
-      // Convert the file to a Uint8Array for the IPC call (Buffer is not available in renderer)
-      const arrayBuffer = await processedImage.file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      const result = await window.electronAPI.items.uploadImage(itemId, uint8Array, processedImage.file.name);
-      
-      if (result.success) {
-        await loadItems(); // Refresh the items list
-        // Update the editing item to reflect the change
-        if (editingItem) {
-          setEditingItem(prev => prev ? { ...prev, image_url: result.data?.image_url } : null);
-        }
-        setPendingImage(null);
-        return true;
-      } else {
-        setImageUploadError(result.error || 'Failed to upload image');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setImageUploadError('An error occurred while uploading the image');
-      return false;
-    }
-  };
-
   const getStatusIcon = (status: RegionStatus) => {
     switch (status) {
       case 'pending':
@@ -987,11 +941,11 @@ const ItemManagement: React.FC = () => {
     }
     
     if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(1)}M`;
+      return `${(price / 1000000).toFixed(2)}M`;
     } else if (price >= 1000) {
-      return `${(price / 1000).toFixed(1)}K`;
+      return `${(price / 1000).toFixed(2)}K`;
     }
-    return price.toLocaleString();
+    return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const formatLastSoldPrice = (price: number, item?: Item) => {
@@ -1006,11 +960,11 @@ const ItemManagement: React.FC = () => {
     }
     
     if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(1)}M`;
+      return `${(price / 1000000).toFixed(2)}M`;
     } else if (price >= 1000) {
-      return `${(price / 1000).toFixed(1)}K`;
+      return `${(price / 1000).toFixed(2)}K`;
     }
-    return price.toLocaleString();
+    return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   return (

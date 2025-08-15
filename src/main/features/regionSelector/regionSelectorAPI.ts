@@ -9,6 +9,14 @@ interface OCRRegion {
   display?: string;
 }
 
+interface SelectedRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  display?: string;
+}
+
 let regionSelectorWindow: BrowserWindow | null = null;
 
 export const regionSelectorHandlers = {
@@ -60,7 +68,7 @@ export const regionSelectorHandlers = {
 
         // Listen for IPC messages from the renderer
         
-        const regionSelectedHandler = (event: any, data: any) => {
+        const regionSelectedHandler = (event: Electron.IpcMainEvent, data: SelectedRegion) => {
           if (resolved || event.sender !== regionSelectorWindow?.webContents) return;
           
           // Validate minimum size for loot UI
@@ -92,7 +100,7 @@ export const regionSelectorHandlers = {
           }
         };
         
-        const regionCancelledHandler = (event: any) => {
+        const regionCancelledHandler = (event: Electron.IpcMainEvent) => {
           if (resolved || event.sender !== regionSelectorWindow?.webContents) return;
           resolved = true;
           

@@ -1,9 +1,14 @@
 import axios from 'axios';
 import { shell } from 'electron';
 import Store from 'electron-store';
+import * as http from 'http';
 import { DISCORD_CONFIG } from '../config/config';
 import { databaseService, User } from './db';
 import { HtmlTemplateService } from './htmlTemplateService';
+
+interface StoreData {
+  [key: string]: unknown;
+}
 
 interface DiscordUser {
   id: string;
@@ -27,9 +32,9 @@ interface AuthData {
 }
 
 class AuthService {
-  private authServer: any;
+  private authServer: http.Server | null = null;
   private readonly AUTH_KEY = 'loot_ledger_auth';
-  private store: Store;
+  private store: Store<StoreData>;
   private htmlTemplateService: HtmlTemplateService;
 
   constructor() {
@@ -65,7 +70,7 @@ class AuthService {
       shell.openExternal(authURL);
 
       // Create a simple HTTP server to handle the callback
-      this.authServer = require('http').createServer(async (req: any, res: any) => {
+      this.authServer = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
         const parsedUrl = require('url').parse(req.url, true);
         
         if (parsedUrl.pathname === '/auth/discord/callback') {
@@ -101,7 +106,7 @@ class AuthService {
 
             res.writeHead(400, { 'Content-Type': 'text/html' });
             res.end(htmlMessage);
-            this.authServer.close();
+            this.authServer?.close();
             resolveOnce({ success: false, error: userFriendlyError });
             return;
           }
@@ -111,19 +116,19 @@ class AuthService {
               const result = await this.exchangeCodeForToken(code as string);
               res.writeHead(200, { 'Content-Type': 'text/html' });
               res.end(this.htmlTemplateService.getAuthSuccessHtml());
-              this.authServer.close();
+              this.authServer?.close();
               resolveOnce(result);
             } catch (err) {
               res.writeHead(500, { 'Content-Type': 'text/html' });
               res.end(this.htmlTemplateService.getAuthErrorHtml('Token exchange failed'));
-              this.authServer.close();
+              this.authServer?.close();
               resolveOnce({ success: false, error: 'Token exchange failed' });
             }
           }
         }
       });
 
-      this.authServer.listen(3000, () => {
+      this.authServer?.listen(3000, () => {
         // Auth server started
       });
 
@@ -139,7 +144,7 @@ class AuthService {
       }, 120000); // 2 minutes
 
       // Clean up timeout if auth completes successfully
-      this.authServer.on('close', () => {
+      this.authServer?.on('close', () => {
         clearTimeout(timeout);
       });
     });
@@ -185,6 +190,7 @@ class AuthService {
         user: user,
         loginTime: new Date().toISOString(),
       };
+      // Type assertion needed due to electron-store typing issues
       (this.store as any).set(this.AUTH_KEY, authData);
 
       return { success: true, user };
@@ -229,6 +235,7 @@ class AuthService {
   }
 
   logout(): void {
+    // Type assertion needed due to electron-store typing issues
     (this.store as any).delete(this.AUTH_KEY);
   }
 
@@ -245,6 +252,7 @@ class AuthService {
 
   private getAuthData(): AuthData | null {
     try {
+      // Type assertion needed due to electron-store typing issues
       const stored = (this.store as any).get(this.AUTH_KEY);
       return stored || null;
     } catch (error) {

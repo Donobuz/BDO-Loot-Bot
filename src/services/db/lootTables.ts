@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { LootTable } from './types';
+import { LootTable, LootTableUpdate } from './types';
 
 export class LootTableService extends BaseDatabase {
   // Get all loot tables
@@ -116,7 +116,7 @@ export class LootTableService extends BaseDatabase {
   }
 
   // Update loot table
-  async update(id: number, updates: Partial<Omit<LootTable, 'id' | 'created' | 'updated'>>): Promise<{ success: boolean; data?: LootTable; error?: string }> {
+  async update(id: number, updates: LootTableUpdate): Promise<{ success: boolean; data?: LootTable; error?: string }> {
     try {
       const { data, error } = await this.supabase
         .from('loot_tables')
@@ -234,7 +234,10 @@ export class LootTableService extends BaseDatabase {
       // Update the item
       const { error: updateError } = await this.supabase
         .from('items')
-        .update({ loot_table_ids: updatedLootTableIds })
+        .update({ 
+          loot_table_ids: updatedLootTableIds,
+          updated: new Date().toISOString()
+        })
         .eq('id', itemId);
 
       if (updateError) {

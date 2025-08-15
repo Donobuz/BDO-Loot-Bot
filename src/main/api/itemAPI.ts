@@ -1,12 +1,10 @@
 import { IpcMainInvokeEvent } from "electron";
 import https from "https";
-import fs from "fs";
-import path from "path";
 import sharp from "sharp";
 import { itemsService } from "../../services/db/items";
 import { adminDatabase } from "../../services/db/admin";
 import { StorageService } from "../../services/db/storage";
-import { ItemType } from "../../services/db/types";
+import { ItemType, Item, ItemUpdate } from "../../services/db/types";
 
 // Arsha API base URL
 const ARSHA_API_BASE = "https://api.arsha.io/v2";
@@ -153,7 +151,7 @@ export const itemHandlers = {
     }
   },
 
-  "items:create": async (event: IpcMainInvokeEvent, item: any) => {
+  "items:create": async (event: IpcMainInvokeEvent, item: Omit<Item, 'id' | 'created' | 'updated'>) => {
     try {
       return await itemsService.create(item);
     } catch (error) {
@@ -362,7 +360,7 @@ export const itemHandlers = {
   "items:update": async (
     event: IpcMainInvokeEvent,
     id: number,
-    updates: any
+    updates: ItemUpdate
   ) => {
     try {
       return await itemsService.update(id, updates);

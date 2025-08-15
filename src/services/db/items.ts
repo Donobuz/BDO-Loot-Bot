@@ -1,5 +1,6 @@
 import { BaseDatabase } from './base';
 import { Item } from '../../renderer/types';
+import { ItemUpdate } from './types';
 
 export class ItemsService extends BaseDatabase {
   private tableName = 'items';
@@ -162,6 +163,8 @@ export class ItemsService extends BaseDatabase {
           type: item.type,
           convertible_to_bdo_item_id: item.convertible_to_bdo_item_id || null,
           conversion_ratio: item.conversion_ratio || 1,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString()
         }])
         .select()
         .single();
@@ -176,7 +179,7 @@ export class ItemsService extends BaseDatabase {
     }
   }
 
-  async update(id: number, updates: Partial<Omit<Item, 'id' | 'created' | 'updated'>>): Promise<{ success: boolean; data?: Item; error?: string }> {
+  async update(id: number, updates: ItemUpdate): Promise<{ success: boolean; data?: Item; error?: string }> {
     try {
       const { data, error } = await this.supabase
         .from(this.tableName)

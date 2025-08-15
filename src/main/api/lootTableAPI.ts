@@ -1,6 +1,6 @@
 import { IpcMainInvokeEvent } from 'electron';
 import { lootTableService } from '../../services/db/lootTables';
-import { Location, LootTable } from '../../services/db/types';
+import { LootTable, LootTableUpdate } from '../../services/db/types';
 
 export const lootTableHandlers = {
   'loot-tables:get-all': async (event: IpcMainInvokeEvent) => {
@@ -48,7 +48,7 @@ export const lootTableHandlers = {
     }
   },
 
-  'loot-tables:update': async (event: IpcMainInvokeEvent, id: number, updates: Partial<Omit<LootTable, 'id' | 'created' | 'updated'>>) => {
+  'loot-tables:update': async (event: IpcMainInvokeEvent, id: number, updates: LootTableUpdate) => {
     try {
       return await lootTableService.update(id, updates);
     } catch (error) {

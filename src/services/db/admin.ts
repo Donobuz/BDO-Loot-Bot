@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from '../../config/config';
+import { Item, ItemUpdate } from './types';
 
 export class AdminDatabase {
   private adminClient: SupabaseClient;
@@ -34,19 +35,8 @@ export class AdminDatabase {
   /**
    * Update item with admin permissions (bypasses RLS)
    */
-  async updateItemAsAdmin(id: number, updates: any): Promise<{ success: boolean; data?: any; error?: string }> {
+  async updateItemAsAdmin(id: number, updates: ItemUpdate): Promise<{ success: boolean; data?: Item; error?: string }> {
     try {
-      const { data: existingItem, error: getError } = await this.adminClient
-        .from('items')
-        .select('id, image_url')
-        .eq('id', id)
-        .single();
-        
-      if (getError) {
-        console.error('❌ [ADMIN] Failed to fetch existing item:', getError);
-        return { success: false, error: `Failed to fetch item: ${getError.message}` };
-      }
-      
       const { data, error } = await this.adminClient
         .from('items')
         .update({
@@ -68,19 +58,6 @@ export class AdminDatabase {
         return { success: false, error: error.message };
       }
 
-      // Verify the update worked by fetching the item again
-      const { data: verifyItem, error: verifyError } = await this.adminClient
-        .from('items')
-        .select('id, image_url')
-        .eq('id', id)
-        .single();
-        
-      if (!verifyError) {
-        console.log('🔍 [ADMIN] Verification - item after update:', JSON.stringify(verifyItem, null, 2));
-      } else {
-        console.warn('⚠️ [ADMIN] Could not verify update:', verifyError);
-      }
-      
       return { success: true, data };
     } catch (error) {
       console.error('❌ [ADMIN] Exception during admin update:', error);

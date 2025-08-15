@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { UserWithPreferences, UserPreferences } from "../../types";
+import { useEffect, useState, useCallback } from "react";
+import { UserWithPreferences, UserPreferencesUpdate } from "../../types";
 import {
   getDiscordAvatarUrl,
   getDefaultAvatarSvg,
@@ -74,7 +74,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
-  const handleSaveSettings = async (preferences: Partial<UserPreferences>) => {
+  const handleSaveSettings = async (preferences: UserPreferencesUpdate) => {
     if (!user || updatingPreferences) return;
     try {
       setUpdatingPreferences(true);

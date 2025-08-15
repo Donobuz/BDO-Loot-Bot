@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
-import * as fs from 'fs';
 import { authService } from '../../services/auth';
 import { databaseService } from '../../services/db';
 import { setupLocationHandlers } from '../api/locationAPI';

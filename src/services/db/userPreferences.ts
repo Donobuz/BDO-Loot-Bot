@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { UserPreferences, TaxCalculations } from './types';
+import { UserPreferences, UserPreferencesUpdate } from './types';
 
 export class UserPreferencesService extends BaseDatabase {
   constructor() {
@@ -44,7 +44,7 @@ export class UserPreferencesService extends BaseDatabase {
   /**
    * Create user preferences
    */
-  async createPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async createPreferences(userId: string, preferences: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
       const { data, error } = await this.supabase
         .from('user_preferences')
@@ -53,7 +53,9 @@ export class UserPreferencesService extends BaseDatabase {
           preferred_region: preferences.preferred_region || 'NA',
           display_regions: preferences.display_regions || ['NA'],
           designated_ocr_region: preferences.designated_ocr_region || null,
-          tax_calculations: preferences.tax_calculations || null
+          tax_calculations: preferences.tax_calculations || null,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString()
         })
         .select()
         .single();
@@ -82,9 +84,9 @@ export class UserPreferencesService extends BaseDatabase {
   /**
    * Update user preferences
    */
-  async updatePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async updatePreferences(userId: string, preferences: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
-      const updates: any = {};
+      const updates: UserPreferencesUpdate = {};
 
       if (preferences.preferred_region !== undefined) {
         updates.preferred_region = preferences.preferred_region;
@@ -107,7 +109,7 @@ export class UserPreferencesService extends BaseDatabase {
       }
 
       // Manually set the updated timestamp
-      updates.updated = new Date().toISOString();
+      (updates as any).updated = new Date().toISOString();
 
       const { data, error } = await this.supabase
         .from('user_preferences')
@@ -140,7 +142,7 @@ export class UserPreferencesService extends BaseDatabase {
   /**
    * Get or create user preferences (upsert pattern)
    */
-  async getOrCreatePreferences(userId: string, defaultPreferences?: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async getOrCreatePreferences(userId: string, defaultPreferences?: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
       // Try to get existing preferences
       const existingResult = await this.getPreferences(userId);

@@ -1,9 +1,10 @@
 import { IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import * as path from 'path';
+import { Location, Item } from '../../../services/db/types';
 
-interface StreamingOverlayData {
-  location?: any;
-  items: any[];
+export interface StreamingOverlayData {
+  location?: Location;
+  items: Item[];
   itemCounts: Record<number, number>;
   sessionStartTime?: string;
 }

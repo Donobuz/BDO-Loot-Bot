@@ -7,6 +7,8 @@ class AclsService extends BaseDatabase {
       const aclData = {
         discord_id: discordId,
         permissions: ['user'], // Default permission
+        created: new Date().toISOString(),
+        updated: new Date().toISOString()
       };
 
       const { data, error } = await this.supabase
@@ -45,7 +47,7 @@ class AclsService extends BaseDatabase {
         .from('acls')
         .update({
           permissions,
-          updated_at: new Date().toISOString(),
+          updated: new Date().toISOString(),
         })
         .eq('discord_id', discordId)
         .select()

@@ -12,6 +12,8 @@
     "build-main": "webpack --config webpack.main.config.js",
     "build": "npm run build-renderer && npm run build-main",
     "clean": "rimraf dist",
+    "setup-ocr": "node scripts/bundle-dependencies.js",
+    "prebuild": "npm run setup-ocr",
     "dist": "npm run build && electron-builder",
     "dist-win": "npm run build && electron-builder --win",
     "dist-mac": "npm run build && electron-builder --mac",

@@ -78,23 +78,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     setStreamingOverlayOpen(false);
   };
 
-  const handleSessionCleanup = (data: any) => {
-    // Stop current session if active
-    if (session.isActive) {
-      setSession(prev => ({
-        ...prev,
-        isActive: false,
-        startTime: undefined,
-        itemCounts: new Map()
-      }));
-    }
-    
-    // Close overlay if open
-    if (streamingOverlayOpen) {
-      setStreamingOverlayOpen(false);
-    }
-  };
-
   const handleItemDetected = (event: any, data: any) => {
     if (!session.isActive) return;
 
@@ -658,14 +641,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         familyFame: taxSettings.family_fame
       }
     };
-  };
-
-  const formatSessionDuration = (startTime: Date): string => {
-    const currentTime = new Date();
-    const diff = currentTime.getTime() - startTime.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   // If session is active, render the ActiveSession component
