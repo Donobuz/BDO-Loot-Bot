@@ -1,8 +1,19 @@
 // OCR Service Exports
-export { TemplateManager, LocationTemplate, type ItemTemplate, type CropArea, type TextFilters, type Pattern, type LocationTemplateData, type ItemMatcher, type MatchResult } from './templateManager';
+export { TemplateManager, LocationTemplate } from './templateManager';
 export { PortableOCR, type OCRResult } from './portableOCR';
 export { TemplateOCR, type LootMatch, type ProcessResult, type QuantityMatch } from './templateOCR';
 export { BDOLootBot, type LootSession, type SessionSummary, type BotStatus } from './bdoLootBot';
+
+// Re-export OCR types from the centralized types location
+export type { 
+    ItemTemplate, 
+    CropArea, 
+    TextFilters, 
+    Pattern, 
+    LocationTemplateData, 
+    ItemMatcher, 
+    MatchResult 
+} from '../db/types/ocr';
 
 // Main OCR service instance
 import { BDOLootBot } from './bdoLootBot';

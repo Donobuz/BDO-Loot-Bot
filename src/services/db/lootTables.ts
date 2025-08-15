@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { LootTable, LootTableUpdate } from './types';
+import { LootTable, LootTableUpdate } from './types/lootTable';
 
 export class LootTableService extends BaseDatabase {
   // Get all loot tables

@@ -1,5 +1,5 @@
 import { TemplateOCR, LootMatch } from './templateOCR';
-import { UserPreferences } from '../db/types';
+import { UserPreferences } from '../db/types/user';
 
 export interface LootSession {
     location: string | null;

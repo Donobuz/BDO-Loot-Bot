@@ -1,6 +1,7 @@
-import { TemplateManager, LocationTemplate, CropArea, TextFilters, Pattern } from './templateManager';
+import { TemplateManager, LocationTemplate } from './templateManager';
 import { PortableOCR, OCRResult } from './portableOCR';
-import { UserPreferences } from '../db/types';
+import { UserPreferences } from '../db/types/user';
+import { CropArea, TextFilters, Pattern } from '../db/types/ocr';
 
 export interface LootMatch {
     item: string;

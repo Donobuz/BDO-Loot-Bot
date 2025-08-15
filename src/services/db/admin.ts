@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from '../../config/config';
-import { Item, ItemUpdate } from './types';
+import { Item, ItemUpdate } from './types/item';
 
 export class AdminDatabase {
   private adminClient: SupabaseClient;

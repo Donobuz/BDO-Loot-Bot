@@ -6,8 +6,12 @@ export { locationService, LocationService } from './locations';
 export { itemsService, ItemsService } from './items';
 export { StorageService } from './storage';
 
-// Type exports
-export * from './types';
+export * from './types/user';
+export * from './types/location';
+export * from './types/item';
+export * from './types/lootTable';
+export * from './types/auth';
+export * from './types/ocr';
 
 // Main database service aggregator class
 import { BaseDatabase } from './base';

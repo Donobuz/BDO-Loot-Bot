@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { UserPreferences, UserPreferencesUpdate } from './types';
+import { UserPreferences, UserPreferencesUpdate } from './types/user';
 
 export class UserPreferencesService extends BaseDatabase {
   constructor() {

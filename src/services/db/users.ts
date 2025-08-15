@@ -1,5 +1,6 @@
 import { BaseDatabase } from './base';
-import { User, DiscordUser, UserUpdate } from './types';
+import { User, UserUpdate } from './types/user';
+import { DiscordUser } from './types/auth';
 import { aclsService } from './acls';
 
 class UsersService extends BaseDatabase {

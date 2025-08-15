@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { itemsService } from "../../services/db/items";
 import { adminDatabase } from "../../services/db/admin";
 import { StorageService } from "../../services/db/storage";
-import { ItemType, Item, ItemUpdate } from "../../services/db/types";
+import { ItemType, Item, ItemUpdate } from "../../services/db/types/item";
 
 // Arsha API base URL
 const ARSHA_API_BASE = "https://api.arsha.io/v2";

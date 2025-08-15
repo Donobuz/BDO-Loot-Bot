@@ -1,6 +1,6 @@
 import { IpcMainInvokeEvent } from 'electron';
 import { lootTableService } from '../../services/db/lootTables';
-import { LootTable, LootTableUpdate } from '../../services/db/types';
+import { LootTable, LootTableUpdate } from '../../services/db/types/lootTable';
 
 export const lootTableHandlers = {
   'loot-tables:get-all': async (event: IpcMainInvokeEvent) => {

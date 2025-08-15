@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { StreamingOverlayData } from '../features/streamingOverlay/streamingOverlayAPI';
-import { Location, Item, LootTable, LocationUpdate, ItemUpdate, LootTableUpdate, UserUpdate, UserPreferencesUpdate } from '../../services/db/types';
+import { Location, LocationUpdate } from '../../services/db/types/location';
+import { Item, ItemUpdate } from '../../services/db/types/item';
+import { LootTable, LootTableUpdate } from '../../services/db/types/lootTable';
+import { UserUpdate, UserPreferencesUpdate } from '../../services/db/types/user';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object

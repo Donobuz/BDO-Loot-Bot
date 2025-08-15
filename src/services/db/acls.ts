@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { UserAcl } from './types';
+import { UserAcl } from './types/user';
 
 class AclsService extends BaseDatabase {
   async createDefaultAcl(discordId: string): Promise<UserAcl> {

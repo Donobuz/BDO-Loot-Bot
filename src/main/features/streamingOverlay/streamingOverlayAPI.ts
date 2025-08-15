@@ -1,6 +1,7 @@
 import { IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import * as path from 'path';
-import { Location, Item } from '../../../services/db/types';
+import { Location } from '../../../services/db/types/location';
+import { Item } from '../../../services/db/types/item';
 
 export interface StreamingOverlayData {
   location?: Location;

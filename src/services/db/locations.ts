@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { Location, LocationUpdate } from './types';
+import { Location, LocationUpdate } from './types/location';
 import { lootTableService } from './lootTables';
 
 export class LocationService extends BaseDatabase {

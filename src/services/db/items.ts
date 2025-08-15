@@ -1,6 +1,6 @@
 import { BaseDatabase } from './base';
 import { Item } from '../../renderer/types';
-import { ItemUpdate } from './types';
+import { ItemUpdate } from './types/item';
 
 export class ItemsService extends BaseDatabase {
   private tableName = 'items';
