@@ -51,10 +51,22 @@ export class SessionManager {
     private totalOCRItemsDetected: number = 0;
     private totalTemplateMatches: number = 0;
     private totalSessionUpdates: number = 0;
-    private recentOCRResults: Array<{text: string, timestamp: number, y: number, confidence: number}> = [];
-    // Balanced deduplication window - BDO loot stays visible for ~5 seconds but we want faster processing
-    private readonly OCR_DEDUPLICATION_WINDOW_MS = 4000; // Reduced from 5000ms to 4 seconds
-    private readonly MIN_CONFIDENCE_THRESHOLD = 0.33; // Lowered to catch more items from light backgrounds
+    private recentOCRResults: Array<{text: string, timestamp: number, y: number, confidence: number, bbox?: number[][]}> = [];
+    // Extended deduplication window for longer grinding sessions
+    private readonly OCR_DEDUPLICATION_WINDOW_MS = 6000; // Increased from 4000ms to 6 seconds
+    private readonly MIN_CONFIDENCE_THRESHOLD = 0.50; // Further lowered from 0.60 - catch even more marginal detections
+    private readonly MAX_DEDUPLICATION_HISTORY = 100; // Reduced from 200 - more aggressive cleanup for long sessions
+
+    // Normalize text for quantity-aware deduplication - BDO specific format
+    private normalizeTextForDeduplication(text: string): string {
+        // BDO loot format is always "Item Name x [number]"
+        // Remove the "x [number]" part to normalize for deduplication
+        return text
+            .replace(/\s+x\s+\d+\s*$/i, '') // Remove " x 3", " x 15", etc. at end of string
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim()
+            .toLowerCase();
+    }
 
     private emitToRenderer(event: string, data: any): void {
         const mainWindow = BrowserWindow.getAllWindows().find(window => !window.isDestroyed());
@@ -363,7 +375,7 @@ export class SessionManager {
             const saveScreenshots = false;
 
             this.config = {
-                captureInterval: 50, // Ultra-fast captures (20 FPS) to catch all loot before FIFO queue drops items
+                captureInterval: 50, // Maximum burst captures (20 FPS) - back to original speed for complete coverage
                 ocrRegion,
                 location: location,
                 saveScreenshots: false // Screenshots completely disabled
@@ -767,37 +779,68 @@ export class SessionManager {
         console.log(`📊 Confidence Filter: ${ocrResults.length} → ${highConfidenceResults.length} (filtered ${ocrResults.length - highConfidenceResults.length} low confidence)`);
         
         
-        // Step 2: Enhanced spatial-temporal deduplication
+        // Step 2: Quantity-aware spatial-temporal deduplication
         const uniqueResults = highConfidenceResults.filter(result => {
             // Get Y position from bounding box (top-left corner)
             const resultY = result.bbox && result.bbox.length > 0 ? result.bbox[0][1] : 0;
             
-            // Check if we've seen this exact text recently (within 5 seconds)
+            // Normalize text for comparison (removes quantity variations)
+            const normalizedText = this.normalizeTextForDeduplication(result.text);
+            console.log(`🔍 NORMALIZE: "${result.text}" → "${normalizedText}"`);
+            
+            // Check if we've seen this normalized text recently
             const isDuplicate = this.recentOCRResults.some(recent => {
-                if (recent.text !== result.text) {
-                    return false; // Different text, not a duplicate
+                const normalizedRecent = this.normalizeTextForDeduplication(recent.text);
+                if (normalizedRecent !== normalizedText) {
+                    return false; // Different item, not a duplicate
                 }
                 
                 const timeDelta = now - recent.timestamp;
                 const confidenceDelta = Math.abs(result.confidence - recent.confidence);
                 
-                // Conservative deduplication - back to settings that worked best:
-                // 1. At least 2.0 seconds have passed (proven timing)
-                // 2. OR it appears at least 100 pixels lower (proven position check)
-                // 3. OR confidence difference is significant (>15%), indicating different detection
+                // Multi-factor deduplication - tightened to reduce over-counting:
                 if (timeDelta <= this.OCR_DEDUPLICATION_WINDOW_MS) {
-                    const timeCheck = timeDelta >= 2000; // Back to 2.0 seconds that worked
-                    const positionCheck = resultY > recent.y + 100; // Back to 100px that worked
-                    const confidenceCheck = confidenceDelta > 15; // Back to 15% that worked
                     
-                    // Use OR logic - if ANY condition is met, it's likely a new pickup
-                    if (timeCheck || positionCheck || confidenceCheck) {
-                        console.log(`✅ CONSERVATIVE NEW PICKUP: "${result.text}" (Δt: ${timeDelta}ms≥2000 OR Y: ${resultY}>${recent.y + 100} OR conf diff: ${confidenceDelta.toFixed(1)}%≥15%)`);
-                        return false; // Not a duplicate - likely new pickup
-                    } else {
-                        console.log(`🔄 CONSERVATIVE FILTER: "${result.text}" (Δt: ${timeDelta}ms<2000 AND Y: ${resultY}≤${recent.y + 100} AND conf similar: ${confidenceDelta.toFixed(1)}%<15%)`);
-                        return true; // Filter as duplicate - all conditions indicate duplicate
+                    // Factor 1: Time-based filtering - 2.2s window for same normalized text
+                    if (timeDelta < 2200) {
+                        console.log(`🔄 TIME FILTER: "${result.text}" → "${normalizedText}" (${timeDelta}ms < 2200ms)`);
+                        return true; // Filter as duplicate
                     }
+                    
+                    // Factor 2: Position-based filtering - 5px radius with 1200ms window
+                    const positionCheck = Math.abs(resultY - recent.y) < 5 && timeDelta < 1200;
+                    if (positionCheck) {
+                        console.log(`🔄 POSITION FILTER: "${result.text}" → "${normalizedText}" (Y: ${resultY} vs ${recent.y} - within 5px, ${timeDelta}ms < 1200ms)`);
+                        return true; // Filter as duplicate - same position
+                    }
+                    
+                    // Factor 3: Confidence similarity check - 3.2% confidence diff within 950ms
+                    if (timeDelta < 950 && confidenceDelta < 0.032) {
+                        console.log(`🔄 CONFIDENCE FILTER: "${result.text}" → "${normalizedText}" (confidence diff: ${(confidenceDelta * 100).toFixed(1)}% < 3.2%, ${timeDelta}ms < 950ms)`);
+                        return true; // Filter as duplicate - same confidence signature
+                    }
+                    
+                    // Factor 4: Skip exact text match - legitimate rapid drops can have identical text
+                    // (e.g., "loot x 1" appearing multiple times in succession is valid)
+                    
+                    // Factor 4: Bounding box overlap check - 11x6px overlap within 1100ms
+                    if (result.bbox && recent.bbox && timeDelta < 1100) {
+                        const currentBox = result.bbox[0];
+                        const recentBox = recent.bbox[0];
+                        
+                        if (currentBox && recentBox) {
+                            const xOverlap = Math.abs(currentBox[0] - recentBox[0]) < 11;
+                            const yOverlap = Math.abs(currentBox[1] - recentBox[1]) < 6;
+                            
+                            if (xOverlap && yOverlap) {
+                                console.log(`🔄 BBOX OVERLAP FILTER: "${result.text}" → "${normalizedText}" (overlap within 11x6px, ${timeDelta}ms < 1100ms)`);
+                                return true; // Filter as duplicate - same screen region
+                            }
+                        }
+                    }
+                    
+                    console.log(`✅ MULTI-FACTOR NEW PICKUP: "${result.text}" → "${normalizedText}" (passed all duplicate checks)`);
+                    return false; // Allow through - different timing and position
                 }
                 
                 return false; // Outside 5-second window - definitely new pickup
@@ -809,8 +852,31 @@ export class SessionManager {
                     text: result.text,
                     timestamp: now,
                     y: resultY,
-                    confidence: result.confidence
+                    confidence: result.confidence,
+                    bbox: result.bbox
                 });
+                
+                // Cleanup old entries to prevent memory issues during long sessions
+                const currentTime = Date.now();
+                
+                // First: Remove entries older than our deduplication window
+                const oldLength = this.recentOCRResults.length;
+                this.recentOCRResults = this.recentOCRResults.filter(entry => 
+                    (currentTime - entry.timestamp) <= (this.OCR_DEDUPLICATION_WINDOW_MS * 2) // Keep 2x window for safety
+                );
+                
+                // Second: If still too many entries, keep only the most recent ones
+                if (this.recentOCRResults.length > this.MAX_DEDUPLICATION_HISTORY) {
+                    const removed = this.recentOCRResults.splice(0, this.recentOCRResults.length - this.MAX_DEDUPLICATION_HISTORY);
+                    console.log(`🧹 Count-based cleanup: removed ${removed.length} old entries`);
+                }
+                
+                // Log cleanup activity
+                const totalRemoved = oldLength - this.recentOCRResults.length;
+                if (totalRemoved > 0) {
+                    console.log(`🧹 Total cleanup: removed ${totalRemoved} entries (${this.recentOCRResults.length} remaining)`);
+                }
+                
                 console.log(`📍 STORING ENHANCED: "${result.text}" at Y=${resultY}, conf=${(result.confidence * 100).toFixed(1)}%, time=${now}`);
                 return true;
             } else {
@@ -819,7 +885,7 @@ export class SessionManager {
         });
         
         if (uniqueResults.length !== highConfidenceResults.length) {
-            console.log(`🔍 Conservative Deduplication (2.0s OR 100px OR 15% conf): ${highConfidenceResults.length} → ${uniqueResults.length} (filtered ${highConfidenceResults.length - uniqueResults.length} duplicates)`);
+            console.log(`🔍 Multi-Factor Robust Deduplication (4 checks): ${highConfidenceResults.length} → ${uniqueResults.length} (filtered ${highConfidenceResults.length - uniqueResults.length} duplicates)`);
             
             // Log what was filtered for debugging
             const filteredItems = highConfidenceResults.filter(item => !uniqueResults.includes(item));

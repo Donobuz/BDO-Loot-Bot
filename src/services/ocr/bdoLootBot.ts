@@ -301,13 +301,26 @@ export class BDOLootBot {
             // No pre-filtering - let the matching logic determine what's valid
             let foundMatch = false;
             
-            // Try to match against loot table items
-            for (const item of this.lootTableItems) {
+            // Try to match against loot table items - Sort by length (longest first) for better matching
+            const sortedItems = [...this.lootTableItems].sort((a, b) => b.name.length - a.name.length);
+            
+            for (const item of sortedItems) {
                 const itemName = item.name.toLowerCase();
                 
-                // Exact match
-                if (detectedText.includes(itemName)) {
-                    console.log(`✅ EXACT MATCH FOUND: "${item.name}"`);
+                // Enhanced exact match - handle OCR artifacts
+                const cleanDetectedText = detectedText
+                    .replace(/[|]/g, 'l')  // | -> l
+                    .replace(/[0]/g, 'o')  // 0 -> o in item names
+                    .replace(/[5]/g, 's')  // 5 -> s
+                    .replace(/[1]/g, 'i')  // 1 -> i
+                    .replace(/[8]/g, 'b')  // 8 -> b
+                    .replace(/[6]/g, 'g'); // 6 -> g
+                
+                // EXACT MATCH: Must contain the full item name with word boundaries
+                const exactMatch = this.isExactMatch(cleanDetectedText, itemName) || this.isExactMatch(detectedText, itemName);
+                
+                if (exactMatch) {
+                    console.log(`✅ EXACT MATCH FOUND: "${item.name}" (${cleanDetectedText !== detectedText ? 'after OCR correction' : 'direct match'})`);
                     matches.push({
                         item: item.name,
                         quantity: this.extractQuantity(detectedText) || 1,
@@ -320,9 +333,9 @@ export class BDOLootBot {
                     break;
                 }
                 
-                // Fuzzy match (partial match)
+                // Fuzzy match (partial match) - only if no exact match found
                 else if (this.fuzzyMatch(detectedText, itemName)) {
-                    console.log(`🔍 FUZZY MATCH FOUND: "${item.name}" for text "${detectedText}"`);
+                    console.log(`🔍 FUZZY MATCH FOUND: "${item.name}" for text "${detectedText}" (length ratio: ${detectedText.length}/${itemName.length})`);
                     matches.push({
                         item: item.name,
                         quantity: this.extractQuantity(detectedText) || 1,
@@ -338,6 +351,10 @@ export class BDOLootBot {
             
             if (!foundMatch) {
                 console.log(`❌ No match found for: "${detectedText}"`);
+                // Debug: Show what items were considered
+                if (this.lootTableItems.length <= 10) { // Only for small loot tables
+                    console.log(`   Available items: ${this.lootTableItems.map(i => i.name).join(', ')}`);
+                }
             }
         }
 
@@ -346,17 +363,75 @@ export class BDOLootBot {
     }
 
     private extractQuantity(text: string): number | null {
-        // Look for patterns like "x5", "5x", "5 ", " 5"
-        const quantityMatch = text.match(/(?:x\s*)?(\d+)(?:\s*x)?/i);
+        // Look for patterns like "x5", "5x", "5 ", " 5", "×5", etc.
+        const quantityMatch = text.match(/(?:[x×]\s*)?(\d+)(?:\s*[x×])?/i);
         if (quantityMatch) {
             const quantity = parseInt(quantityMatch[1]);
-            return quantity > 0 ? quantity : null;
+            if (quantity > 0 && quantity <= 999) { // Reasonable bounds
+                return quantity;
+            }
         }
         return null;
     }
 
+    private isExactMatch(detectedText: string, itemName: string): boolean {
+        // Create word boundary pattern to ensure exact item name matching
+        // This prevents "caphras stone" from matching "black stone"
+        const escaped = itemName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(`\\b${escaped}\\b`, 'i');
+        return pattern.test(detectedText);
+    }
+
     private fuzzyMatch(text: string, itemName: string): boolean {
-        // Simple fuzzy matching - check if item name appears in detected text
-        return text.includes(itemName) || itemName.includes(text);
+        // Conservative fuzzy matching to prevent incorrect matches like "caphras stone" -> "black stone"
+        const textLower = text.toLowerCase();
+        const itemLower = itemName.toLowerCase();
+        
+        // Only allow fuzzy matching if the item name is mostly contained
+        // and the text is not significantly longer (to avoid substring matches)
+        const textLength = textLower.length;
+        const itemLength = itemLower.length;
+        
+        // Skip fuzzy matching if text is much longer than item name (likely different item)
+        if (textLength > itemLength * 2) {
+            return false;
+        }
+        
+        // 1. Check for OCR character substitutions first
+        const ocrCorrectedText = textLower
+            .replace(/[|]/g, 'l')  // | -> l
+            .replace(/[0]/g, 'o')  // 0 -> o
+            .replace(/[5]/g, 's')  // 5 -> s
+            .replace(/[1]/g, 'i')  // 1 -> i
+            .replace(/[8]/g, 'b')  // 8 -> b
+            .replace(/[6]/g, 'g');  // 6 -> g
+            
+        const ocrCorrectedItem = itemLower
+            .replace(/[|]/g, 'l')
+            .replace(/[0]/g, 'o')
+            .replace(/[5]/g, 's')
+            .replace(/[1]/g, 'i')
+            .replace(/[8]/g, 'b')
+            .replace(/[6]/g, 'g');
+        
+        // Try word boundary match with OCR corrections
+        const escaped = ocrCorrectedItem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(`\\b${escaped}\\b`, 'i');
+        if (pattern.test(ocrCorrectedText)) {
+            return true;
+        }
+        
+        // 2. Only allow partial matches for longer item names (4+ chars) and high similarity
+        if (itemLength >= 4) {
+            const minMatchLength = Math.ceil(itemLength * 0.8); // Increased from 70% to 80%
+            for (let i = 0; i <= itemLength - minMatchLength; i++) {
+                const substring = ocrCorrectedItem.substring(i, i + minMatchLength);
+                if (ocrCorrectedText.includes(substring) && substring.length >= 4) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }
