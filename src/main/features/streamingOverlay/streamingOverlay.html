@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://ymvjrotyvagtxdntimki.supabase.co data:; connect-src 'self' https://ymvjrotyvagtxdntimki.supabase.co;" />
+    <title>BDO Loot Tracker - Streaming Overlay</title>
+    <style>
+      :root {
+        --primary-bg: #1e1e2e;
+        --card-bg: rgba(30, 30, 46, 0.95);
+        --card-border: rgba(255, 255, 255, 0.1);
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0b2;
+        --input-bg: #2f3136;
+        --input-border: #40444b;
+        --discord-primary: #5865f2;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #00ff00; /* Chroma key green */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .overlay-container {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        margin: 20px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 40px);
+      }
+
+      .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--card-border);
+      }
+
+      .session-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .session-status h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #43b581;
+        box-shadow: 0 0 10px rgba(67, 181, 129, 0.5);
+        position: relative;
+      }
+
+      .status-indicator::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border: 2px solid #43b581;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.3;
+        }
+      }
+
+      .session-duration {
+        font-family: "Courier New", monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #43b581;
+        background: rgba(67, 181, 129, 0.1);
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(67, 181, 129, 0.3);
+      }
+
+      .session-stats {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+      }
+
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center;
+        flex: 1;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        color: #43b581;
+        font-weight: 700;
+      }
+
+      .stat:first-child .stat-value {
+        color: #ffa500; /* Orange for gross value */
+      }
+
+      .stat:last-child .stat-value {
+        color: #43b581; /* Green for post-tax value */
+      }
+
+      .active-loot-items {
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+        flex: 1;
+      }
+
+      .active-loot-items h4 {
+        margin: 0 0 16px 0;
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .active-items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .active-loot-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      .active-loot-item:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+
+      .item-image-container {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        overflow: visible;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px;
+      }
+
+      .item-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+      }
+
+      .item-image-placeholder {
+        font-size: 16px;
+        opacity: 0.6;
+      }
+
+      .item-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .item-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .item-counter {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .item-counter .count {
+        font-size: 16px;
+        font-weight: 700;
+        color: #43b581;
+      }
+
+      .item-counter .value {
+        font-size: 10px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .no-items {
+        text-align: center;
+        color: var(--text-secondary);
+        font-style: italic;
+        padding: 40px 20px;
+      }
+
+      /* Scrollbar */
+      .active-items-grid::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-thumb {
+        background: var(--input-border);
+        border-radius: 3px;
+      }
+
+      .active-items-grid::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay-container">
+      <div class="session-header">
+        <div class="session-status">
+          <div class="status-indicator"></div>
+          <h3>Loot Tracker</h3>
+        </div>
+        <div class="session-duration" id="sessionDuration">0:00</div>
+      </div>
+
+      <div class="session-stats">
+        <div class="stat">
+          <span class="stat-label">Gross Value:</span>
+          <span class="stat-value" id="grossValue">0 silver</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Post-Tax Value:</span>
+          <span class="stat-value" id="postTaxValue">0 silver</span>
+        </div>
+      </div>
+
+      <div class="active-loot-items">
+        <div class="active-items-grid" id="lootItems">
+          <div class="no-items">No loot yet</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Prevent refresh in overlay window
+      document.addEventListener('keydown', (event) => {
+        const isRefreshShortcut = 
+          (event.metaKey && event.key === 'r') || // Cmd+R (Mac)
+          (event.ctrlKey && event.key === 'r') || // Ctrl+R (Windows/Linux)
+          event.key === 'F5'; // F5
+
+        if (isRefreshShortcut) {
+          event.preventDefault();
+          console.log('Refresh prevented in overlay window');
+          return false;
+        }
+      });
+
+      // Prevent context menu refresh option
+      document.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        return false;
+      });
+    </script>
+    <script src="overlay.js"></script>
+  </body>
+</html>

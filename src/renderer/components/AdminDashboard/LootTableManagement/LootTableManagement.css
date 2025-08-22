@@ -1,0 +1,626 @@
+.loot-table-management {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--primary-bg, linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%));
+  min-height: 100vh;
+  color: var(--text-primary, #ffffff);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.header h2 {
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 8px;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.header p {
+  color: var(--text-secondary, #a0a0b2);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.error-message {
+  background: #ff4d4d;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-message button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.location-selector-section {
+  margin-bottom: 32px;
+}
+
+.loot-table-section {
+  background: var(--card-bg, rgba(30, 30, 46, 0.95));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.loot-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.header-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.header-info p {
+  margin: 0;
+  color: var(--text-secondary, #a0a0b2);
+  font-size: 0.9rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.create-loot-table-btn,
+.add-item-btn {
+  padding: 10px 20px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.create-loot-table-btn:hover,
+.add-item-btn:hover {
+  background: #1d4ed8;
+}
+
+.create-loot-table-btn:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.no-loot-table {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary, #a0a0b2);
+}
+
+.no-loot-table p {
+  margin: 8px 0;
+  font-size: 1rem;
+}
+
+.loot-table-items {
+  margin-top: 24px;
+}
+
+.items-header {
+  margin-bottom: 16px;
+}
+
+.items-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.no-items {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary, #a0a0b2);
+  background: var(--input-bg, rgba(47, 49, 54, 0.6));
+  border-radius: 8px;
+  border: 2px dashed var(--card-border, rgba(255, 255, 255, 0.1));
+}
+
+.no-items p {
+  margin: 8px 0;
+  font-size: 1rem;
+}
+
+.items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.loot-table-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.loot-table-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.item-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.item-details h5 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.item-details p {
+  margin: 2px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #a0a0b2);
+}
+
+.remove-item-btn {
+  padding: 6px 12px;
+  background: rgba(255, 77, 77, 0.8);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.remove-item-btn:hover {
+  background: #ff4d4d;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--card-bg, rgba(30, 30, 46, 0.98));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.modal-full-width {
+  background: var(--card-bg, rgba(30, 30, 46, 0.98));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  width: 95%;
+  max-width: 1000px;
+  max-height: 90vh; /* Increased from 85vh */
+  min-height: 600px; /* Added minimum height for better dropdown space */
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #a0a0b2);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #ffffff);
+}
+
+.modal-content {
+  padding: 24px;
+}
+
+.modal-content-full {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px); /* Adjusted for increased modal height */
+  min-height: 400px; /* Added minimum height for better SearchableSelect space */
+}
+
+.item-selector {
+  margin-bottom: 24px;
+}
+
+.item-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+}
+
+.item-selector select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg, rgba(47, 49, 54, 0.8));
+  border: 1px solid var(--input-border, rgba(255, 255, 255, 0.2));
+  border-radius: 8px;
+  color: var(--text-primary, #ffffff);
+  font-size: 1rem;
+}
+
+.item-selector select:focus {
+  outline: none;
+  border-color: var(--accent-color, #00d4ff);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: stretch;
+}
+
+.modal-actions .btn {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 14px;
+}
+
+.modal-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-primary, #ffffff);
+}
+
+.modal-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.modal-actions .btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.modal-actions .btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.6);
+}
+
+.modal-actions .btn-primary:disabled {
+  background: rgba(37, 99, 235, 0.5);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary, #ffffff);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.add-btn {
+  padding: 10px 20px;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.add-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.add-btn:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+/* Loading states */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-left: 4px solid var(--accent-color, #00d4ff);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.retry-button {
+  padding: 12px 24px;
+  background: var(--accent-color, #00d4ff);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.retry-button:hover {
+  background: var(--accent-hover, #00b8e6);
+}
+
+/* Enhanced Modal Styles */
+.add-item-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.add-item-section h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary, #ffffff);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.item-selection-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 20px; /* Added margin for SearchableSelect dropdown space */
+}
+
+/* SearchableSelect specific styling in modal */
+.add-item-section .searchable-select {
+  flex: 1;
+  min-width: 0; /* Ensure it can shrink properly */
+}
+
+.add-item-section .searchable-select .options-list {
+  max-height: 250px; /* Increased dropdown height for better visibility */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); /* Better shadow for modal context */
+}
+
+.item-select-wide {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--input-bg, rgba(47, 49, 54, 0.8));
+  border: 1px solid var(--input-border, rgba(255, 255, 255, 0.2));
+  border-radius: 8px;
+  color: var(--text-primary, #ffffff);
+  font-size: 1rem;
+}
+
+.item-select-wide:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.stage-btn {
+  padding: 12px 20px;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.stage-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.stage-btn:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.staging-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(37, 99, 235, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.staging-section h4 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary, #ffffff);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.staged-items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.staged-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.staged-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.staged-item-name {
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin-right: 12px;
+}
+
+.staged-item-details {
+  color: var(--text-secondary, #a0a0b2);
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.remove-staged-btn {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.remove-staged-btn:hover {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff5252;
+}
+
+/* Error state for missing loot table */
+.no-loot-table.lt-error-state {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+}
+
+.no-loot-table.lt-error-state p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+.no-loot-table.lt-error-state p:first-child {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .loot-table-management {
+    padding: 16px;
+  }
+  
+  .loot-table-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .items-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .loot-table-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .item-info {
+    justify-content: flex-start;
+  }
+}

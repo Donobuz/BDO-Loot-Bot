@@ -1,0 +1,161 @@
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.select-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--input-bg, #2f3136);
+  border: 2px solid var(--input-border, #40444b);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-input:hover:not(.disabled) {
+  border-color: var(--discord-primary, #5865f2);
+}
+
+.select-input.open {
+  border-color: var(--discord-primary, #5865f2);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 40px 12px 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-input:disabled {
+  cursor: not-allowed;
+}
+
+.dropdown-arrow {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.dropdown-arrow.open {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.options-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--input-bg, #2f3136);
+  border: 2px solid var(--discord-primary, #5865f2);
+  border-top: none;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 9999; /* Higher z-index for modal usage */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.option:hover,
+.option.highlighted {
+  background: var(--input-hover-bg, #36393f);
+}
+
+.option-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.option-stats {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.no-options {
+  padding: 12px 16px;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Custom scrollbar for options list */
+.options-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.options-list::-webkit-scrollbar-track {
+  background: var(--modal-bg, #36393f);
+}
+
+.options-list::-webkit-scrollbar-thumb {
+  background: var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+}
+
+.options-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Animation for smooth opening */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.options-list {
+  animation: slideDown 0.15s ease-out;
+}
+
+/* Special styling when used in modals */
+.modal-overlay .searchable-select .options-list,
+.modal .searchable-select .options-list {
+  z-index: 9999;
+  /* Ensure dropdown appears above modal content */
+}
