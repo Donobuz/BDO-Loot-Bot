@@ -1,4 +1,12 @@
-import { TemplateOCR, LootMatch } from './templateOCR';
+// TemplateOCR removed - using FastOCR pipeline only
+export interface LootMatch {
+    item: string;
+    quantity: number;
+    confidence: number;
+    method: 'exact' | 'fuzzy';
+    originalText: string;
+    bbox: number[][];
+}
 import { UserPreferences } from '../db/types/user';
 import { databaseService } from '../db';
 import { Item } from '../db/types/item';
@@ -29,7 +37,7 @@ export interface BotStatus {
 }
 
 export class BDOLootBot {
-    private ocr: TemplateOCR;
+    // Removed TemplateOCR - using FastOCR pipeline only
     private currentSession: LootSession;
     private isInitialized: boolean;
     private userPreferences: UserPreferences | null;
@@ -37,7 +45,7 @@ export class BDOLootBot {
     private lootTableItems: Item[];
 
     constructor() {
-        this.ocr = new TemplateOCR();
+        // Removed TemplateOCR initialization - using FastOCR pipeline only
         this.isInitialized = false;
         this.userPreferences = null;
         this.currentLocationId = null;
@@ -51,24 +59,7 @@ export class BDOLootBot {
         };
     }
 
-    public async initialize(): Promise<boolean> {
-        try {
-            const ocrReady = await this.ocr.initialize();
-            this.isInitialized = ocrReady;
-            
-            if (this.isInitialized) {
-                console.log('BDO Loot Bot initialized successfully');
-            } else {
-                console.error('Failed to initialize BDO Loot Bot - OCR engine not ready');
-            }
-            
-            return this.isInitialized;
-        } catch (error) {
-            console.error('Failed to initialize BDO Loot Bot:', error);
-            this.isInitialized = false;
-            return false;
-        }
-    }
+    // Removed old initialize() method - using initializeTemplateMatchingOnly() for FastOCR pipeline
 
     /**
      * Initialize BDOLootBot for template matching only (no OCR required)
@@ -88,10 +79,8 @@ export class BDOLootBot {
     }
 
     public setUserPreferences(preferences: UserPreferences): void {
+        // Removed TemplateOCR preference setting - using FastOCR pipeline only
         this.userPreferences = preferences;
-        if (this.ocr) {
-            this.ocr.setUserPreferences(preferences);
-        }
     }
 
     public async setGrindLocation(locationName: string, locationId?: number): Promise<{ success: boolean; error?: string }> {
@@ -166,79 +155,7 @@ export class BDOLootBot {
         return summary;
     }
 
-    public async processLootDrop(imageBuffer: Buffer): Promise<{ success: boolean; itemsFound: number; items?: LootMatch[]; error?: string }> {
-        if (!this.isInitialized) {
-            return { success: false, itemsFound: 0, error: 'Bot not initialized' };
-        }
-
-        if (!this.isSessionActive()) {
-            return { success: false, itemsFound: 0, error: 'No active session. Start a session first.' };
-        }
-
-        try {
-            const results = await this.ocr.processLootArea(imageBuffer);
-
-            if (results.success && results.matches) {
-                for (const match of results.matches) {
-                    this.addToSession(match);
-                }
-
-                return {
-                    success: true,
-                    itemsFound: results.matches.length,
-                    items: results.matches
-                };
-            }
-
-            return {
-                success: false,
-                itemsFound: 0,
-                error: results.error || 'Unknown OCR error'
-            };
-        } catch (error) {
-            return { 
-                success: false, 
-                itemsFound: 0, 
-                error: `Failed to process loot drop: ${error}` 
-            };
-        }
-    }
-
-    public async processLootImage(imagePath: string): Promise<{ success: boolean; itemsFound: number; items?: LootMatch[]; error?: string }> {
-        if (!this.isInitialized) {
-            return { success: false, itemsFound: 0, error: 'Bot not initialized' };
-        }
-
-        try {
-            const results = await this.ocr.processLootImage(imagePath);
-
-            if (results.success && results.matches) {
-                if (this.isSessionActive()) {
-                    for (const match of results.matches) {
-                        this.addToSession(match);
-                    }
-                }
-
-                return {
-                    success: true,
-                    itemsFound: results.matches.length,
-                    items: results.matches
-                };
-            }
-
-            return {
-                success: false,
-                itemsFound: 0,
-                error: results.error || 'Unknown OCR error'
-            };
-        } catch (error) {
-            return { 
-                success: false, 
-                itemsFound: 0, 
-                error: `Failed to process loot image: ${error}` 
-            };
-        }
-    }
+    // Removed old processLootDrop and processLootImage methods - using processOCRResults for FastOCR pipeline
 
     private addToSession(match: LootMatch): void {
         const itemName = match.item;
@@ -293,19 +210,14 @@ export class BDOLootBot {
     public getStatus(): BotStatus {
         return {
             initialized: this.isInitialized,
-            ocrReady: this.ocr ? this.ocr.isReady() : false,
+            ocrReady: true, // Always true for FastOCR pipeline
             currentLocation: this.currentSession.location,
             sessionActive: this.isSessionActive(),
             lastProcessTime: null // TODO: Track last process time
         };
     }
 
-    public reloadTemplates(): void {
-        if (this.ocr) {
-            this.ocr.reloadTemplates();
-            console.log('Templates reloaded');
-        }
-    }
+    // Removed reloadTemplates() method - not needed for FastOCR pipeline
 
     public resetSession(): void {
         this.currentSession = {
@@ -386,17 +298,7 @@ export class BDOLootBot {
             console.log(`Cleaned text: "${detectedText}"`);
             console.log(`Confidence: ${(ocrResult.confidence * 100).toFixed(1)}%`);
             
-            // Skip very short or low confidence text
-            if (detectedText.length < 2) {
-                console.log(`❌ Skipped: too short (${detectedText.length} chars)`);
-                continue;
-            }
-            
-            if (ocrResult.confidence < 0.3) { // Lower threshold for testing
-                console.log(`❌ Skipped: low confidence (${(ocrResult.confidence * 100).toFixed(1)}%)`);
-                continue;
-            }
-
+            // No pre-filtering - let the matching logic determine what's valid
             let foundMatch = false;
             
             // Try to match against loot table items

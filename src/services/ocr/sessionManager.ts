@@ -54,7 +54,7 @@ export class SessionManager {
     private recentOCRResults: Array<{text: string, timestamp: number, y: number, confidence: number}> = [];
     // Balanced deduplication window - BDO loot stays visible for ~5 seconds but we want faster processing
     private readonly OCR_DEDUPLICATION_WINDOW_MS = 4000; // Reduced from 5000ms to 4 seconds
-    private readonly MIN_CONFIDENCE_THRESHOLD = 0.75; // Minimum confidence for considering OCR result valid (0.0-1.0)
+    private readonly MIN_CONFIDENCE_THRESHOLD = 0.33; // Lowered to catch more items from light backgrounds
 
     private emitToRenderer(event: string, data: any): void {
         const mainWindow = BrowserWindow.getAllWindows().find(window => !window.isDestroyed());
@@ -384,7 +384,7 @@ export class SessionManager {
             console.log(`FastOCR Session started for ${this.config.location} with ${this.config.captureInterval}ms interval`);
             console.log(`OCR Region: ${ocrRegion.x}, ${ocrRegion.y}, ${ocrRegion.width}x${ocrRegion.height}`);
             console.log(`🔄 Session state sync enabled (${this.STATE_SYNC_INTERVAL_MS}ms interval, ${this.OCR_DEDUPLICATION_WINDOW_MS}ms dedup window)`);
-            console.log(`🎯 Enhanced deduplication: 2.2s OR 120px OR 18% confidence difference`);
+            console.log(`🎯 Conservative deduplication: 2.0s OR 100px OR 15% confidence difference (proven settings)`);
 
             this.startCapture();
             return { success: true };
@@ -766,6 +766,7 @@ export class SessionManager {
         
         console.log(`📊 Confidence Filter: ${ocrResults.length} → ${highConfidenceResults.length} (filtered ${ocrResults.length - highConfidenceResults.length} low confidence)`);
         
+        
         // Step 2: Enhanced spatial-temporal deduplication
         const uniqueResults = highConfidenceResults.filter(result => {
             // Get Y position from bounding box (top-left corner)
@@ -780,21 +781,21 @@ export class SessionManager {
                 const timeDelta = now - recent.timestamp;
                 const confidenceDelta = Math.abs(result.confidence - recent.confidence);
                 
-                // Enhanced multi-factor deduplication (fine-tuned for accuracy):
-                // 1. At least 2.2 seconds have passed (slightly more restrictive timing)
-                // 2. OR it appears at least 120 pixels lower (slightly tighter position check)
-                // 3. OR confidence difference is significant (>18%), indicating different detection
+                // Conservative deduplication - back to settings that worked best:
+                // 1. At least 2.0 seconds have passed (proven timing)
+                // 2. OR it appears at least 100 pixels lower (proven position check)
+                // 3. OR confidence difference is significant (>15%), indicating different detection
                 if (timeDelta <= this.OCR_DEDUPLICATION_WINDOW_MS) {
-                    const timeCheck = timeDelta >= 2200; // Increased from 2000ms
-                    const positionCheck = resultY > recent.y + 120; // Increased from 100px
-                    const confidenceCheck = confidenceDelta > 18; // Increased from 15%
+                    const timeCheck = timeDelta >= 2000; // Back to 2.0 seconds that worked
+                    const positionCheck = resultY > recent.y + 100; // Back to 100px that worked
+                    const confidenceCheck = confidenceDelta > 15; // Back to 15% that worked
                     
                     // Use OR logic - if ANY condition is met, it's likely a new pickup
                     if (timeCheck || positionCheck || confidenceCheck) {
-                        console.log(`✅ ENHANCED NEW PICKUP: "${result.text}" (Δt: ${timeDelta}ms≥2200 OR Y: ${resultY}>${recent.y + 120} OR conf diff: ${confidenceDelta.toFixed(1)}%≥18%)`);
+                        console.log(`✅ CONSERVATIVE NEW PICKUP: "${result.text}" (Δt: ${timeDelta}ms≥2000 OR Y: ${resultY}>${recent.y + 100} OR conf diff: ${confidenceDelta.toFixed(1)}%≥15%)`);
                         return false; // Not a duplicate - likely new pickup
                     } else {
-                        console.log(`🔄 ENHANCED FILTER: "${result.text}" (Δt: ${timeDelta}ms<2200 AND Y: ${resultY}≤${recent.y + 120} AND conf similar: ${confidenceDelta.toFixed(1)}%<18%)`);
+                        console.log(`🔄 CONSERVATIVE FILTER: "${result.text}" (Δt: ${timeDelta}ms<2000 AND Y: ${resultY}≤${recent.y + 100} AND conf similar: ${confidenceDelta.toFixed(1)}%<15%)`);
                         return true; // Filter as duplicate - all conditions indicate duplicate
                     }
                 }
@@ -818,14 +819,14 @@ export class SessionManager {
         });
         
         if (uniqueResults.length !== highConfidenceResults.length) {
-            console.log(`🔍 Enhanced Deduplication (2.2s OR 120px OR 18% conf): ${highConfidenceResults.length} → ${uniqueResults.length} (filtered ${highConfidenceResults.length - uniqueResults.length} duplicates)`);
+            console.log(`🔍 Conservative Deduplication (2.0s OR 100px OR 15% conf): ${highConfidenceResults.length} → ${uniqueResults.length} (filtered ${highConfidenceResults.length - uniqueResults.length} duplicates)`);
             
             // Log what was filtered for debugging
             const filteredItems = highConfidenceResults.filter(item => !uniqueResults.includes(item));
-            console.log(`🗑️  ENHANCED FILTERED: [${filteredItems.map(r => `"${r.text}" (${(r.confidence * 100).toFixed(1)}%)`).join(', ')}]`);
+            console.log(`🗑️  CONSERVATIVE FILTERED: [${filteredItems.map(r => `"${r.text}" (${(r.confidence * 100).toFixed(1)}%)`).join(', ')}]`);
             
             // Show the deduplication state for debugging
-            console.log(`📋 ENHANCED DEDUP STATE (${this.recentOCRResults.length} items tracked):`);
+            console.log(`📋 CONSERVATIVE DEDUP STATE (${this.recentOCRResults.length} items tracked):`);
             this.recentOCRResults.forEach((item, i) => {
                 const age = now - item.timestamp;
                 console.log(`  ${i + 1}. "${item.text}" (Y: ${item.y}, conf: ${(item.confidence * 100).toFixed(1)}%, age: ${age}ms)`);

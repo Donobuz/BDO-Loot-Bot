@@ -120,17 +120,17 @@ export class TemplateOCR {
         try {
             const sharp = require('sharp');
             
-            // Apply aggressive preprocessing for better OCR
+            // Apply enhanced preprocessing specifically for light/transparent backgrounds
             let processedBuffer = await sharp(imageBuffer)
                 // Convert to grayscale for better contrast
                 .greyscale()
-                // Increase contrast and brightness
+                // Normalize to use full range
                 .normalize()
+                // Apply aggressive contrast enhancement for light backgrounds
+                .linear(2.5, -30) // multiply by 2.5, subtract 30 to darken background
                 // Apply gaussian blur to reduce noise, then sharpen
-                .blur(0.5)
-                .sharpen({ sigma: 1, m1: 0.5, m2: 2, x1: 2, y1: 10 })
-                // Enhance contrast further
-                .linear(1.5, 0) // multiply by 1.5, add 0
+                .blur(0.3)
+                .sharpen({ sigma: 2, m1: 1, m2: 3, x1: 2, y1: 10 })
                 // Convert to PNG for better quality
                 .png({ quality: 100, compressionLevel: 0 })
                 .toBuffer();
@@ -160,7 +160,7 @@ export class TemplateOCR {
         return results
             .filter(result => {
                 // Filter out very low confidence results
-                if (result.confidence < 0.3) return false;
+                if (result.confidence < 0.25) return false; // Lowered from 0.3 to catch more items
                 
                 // Filter out very short text (likely noise)
                 if (result.text.trim().length < 2) return false;

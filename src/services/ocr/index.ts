@@ -1,11 +1,13 @@
-// OCR Service Exports
-export { TemplateManager, LocationTemplate } from './templateManager';
-export { PortableOCR, type OCRResult } from './portableOCR';
-export { TemplateOCR, type LootMatch, type ProcessResult, type QuantityMatch } from './templateOCR';
-export { BDOLootBot, type LootSession, type SessionSummary, type BotStatus } from './bdoLootBot';
+// OCR Service Exports - FastOCR Pipeline Only
+export { BDOLootBot, type LootSession, type SessionSummary, type BotStatus, type LootMatch } from './bdoLootBot';
 export { FastOCRService, type FastOCRProcessingResult } from './fastOCR';
 export { ScreenCapture, type CaptureRegion, type CaptureResult } from './screenCapture';
 export { SessionManager, type SessionConfig, type SessionStats } from './sessionManager';
+
+// Legacy exports (deprecated - kept for compatibility)
+export { TemplateManager, LocationTemplate } from './templateManager';
+export { PortableOCR, type OCRResult } from './portableOCR';
+export { TemplateOCR, type ProcessResult, type QuantityMatch } from './templateOCR';
 
 // Re-export OCR types from the centralized types location
 export type { 
