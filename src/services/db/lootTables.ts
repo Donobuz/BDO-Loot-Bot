@@ -69,6 +69,44 @@ export class LootTableService extends BaseDatabase {
     }
   }
 
+  // Get items for a location's loot table
+  async getItemsForLocation(locationId: number): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      // First get the loot table to get the item IDs
+      const { data: lootTable, error: lootTableError } = await this.supabase
+        .from('loot_tables')
+        .select('item_ids')
+        .eq('location_id', locationId)
+        .single();
+
+      if (lootTableError) {
+        if (lootTableError.code === 'PGRST116') {
+          return { success: false, error: 'No loot table found for this location' };
+        }
+        return { success: false, error: lootTableError.message };
+      }
+
+      if (!lootTable.item_ids || lootTable.item_ids.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      // Get the items using the item IDs
+      const { data: items, error: itemsError } = await this.supabase
+        .from('items')
+        .select('id, name, bdo_item_id, base_price, last_sold_price, region, type, convertible_to_bdo_item_id, conversion_ratio, image_url')
+        .in('id', lootTable.item_ids)
+        .is('archived', null);
+
+      if (itemsError) {
+        return { success: false, error: itemsError.message };
+      }
+
+      return { success: true, data: items || [] };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   // Get loot table by location ID
   async getByLocationId(locationId: number): Promise<{ success: boolean; data?: LootTable; error?: string }> {
     try {
@@ -148,7 +186,7 @@ export class LootTableService extends BaseDatabase {
       }
 
       const currentItemIds = getCurrentResult.data.item_ids || [];
-      
+
       // Check if item is already in the loot table
       if (currentItemIds.includes(itemId)) {
         return { success: false, error: 'Item already exists in this loot table' };
@@ -182,7 +220,7 @@ export class LootTableService extends BaseDatabase {
       }
 
       const currentItemIds = getCurrentResult.data.item_ids || [];
-      
+
       // Remove the item from the array
       const updatedItemIds = currentItemIds.filter(id => id !== itemId);
 
@@ -234,7 +272,7 @@ export class LootTableService extends BaseDatabase {
       // Update the item
       const { error: updateError } = await this.supabase
         .from('items')
-        .update({ 
+        .update({
           loot_table_ids: updatedLootTableIds,
           updated: new Date().toISOString()
         })

@@ -8,6 +8,7 @@ import { lootTableHandlers } from '../api/lootTableAPI';
 import { userHandlers, userPreferencesHandlers } from '../api/userAPI';
 import { regionSelectorHandlers } from '../features/regionSelector/regionSelectorAPI';
 import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
+import { sessionHandlers } from '../api/sessionAPI';
 import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
@@ -158,6 +159,11 @@ Object.entries(regionSelectorHandlers).forEach(([event, handler]) => {
 
 // Setup streaming overlay handlers
 Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
+  ipcMain.handle(event, handler);
+});
+
+// Setup session handlers
+Object.entries(sessionHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

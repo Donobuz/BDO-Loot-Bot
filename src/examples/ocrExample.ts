@@ -18,7 +18,7 @@ export class OCRExample {
         }
 
         // 2. Load user preferences (including OCR region)
-        const preferencesResult = await this.userPreferencesService.getPreferences(userId);
+        const preferencesResult = await this.userPreferencesService.getOrCreatePreferences(userId);
         if (preferencesResult.success && preferencesResult.data) {
             this.ocrService.setUserPreferences(preferencesResult.data);
             console.log('✅ User preferences loaded');
@@ -40,7 +40,7 @@ export class OCRExample {
 
     async startLootSession() {
         console.log('🎮 Starting loot tracking session...');
-        
+
         const sessionResult = this.ocrService.startSession();
         if (sessionResult.success) {
             console.log('✅ Session started successfully');
@@ -53,9 +53,9 @@ export class OCRExample {
 
     async processTestImage(imagePath: string) {
         console.log(`🔍 Processing test image: ${imagePath}`);
-        
+
         const result = await this.ocrService.processLootImage(imagePath);
-        
+
         if (result.success) {
             console.log(`✅ Found ${result.itemsFound} items:`);
             if (result.items) {
@@ -72,9 +72,9 @@ export class OCRExample {
 
     async processImageBuffer(imageBuffer: Buffer) {
         console.log('🔍 Processing image buffer...');
-        
+
         const result = await this.ocrService.processLootDrop(imageBuffer);
-        
+
         if (result.success) {
             console.log(`✅ Found ${result.itemsFound} items in buffer`);
         } else {
@@ -86,14 +86,14 @@ export class OCRExample {
 
     getSessionSummary() {
         const summary = this.ocrService.getSessionSummary();
-        
+
         console.log('📊 Session Summary:');
         console.log(`  Location: ${summary.location}`);
         console.log(`  Duration: ${Math.round(summary.duration / 1000)}s`);
         console.log(`  Items collected: ${summary.itemCount}`);
         console.log(`  Silver: ${summary.silver.toLocaleString()}`);
         console.log('  Loot breakdown:');
-        
+
         Object.entries(summary.loot).forEach(([item, count]) => {
             console.log(`    • ${count}x ${item}`);
         });
@@ -109,7 +109,7 @@ export class OCRExample {
 
     getStatus() {
         const status = this.ocrService.getStatus();
-        
+
         console.log('📋 Bot Status:');
         console.log(`  Initialized: ${status.initialized ? '✅' : '❌'}`);
         console.log(`  OCR Ready: ${status.ocrReady ? '✅' : '❌'}`);

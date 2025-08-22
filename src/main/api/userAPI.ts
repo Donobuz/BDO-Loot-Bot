@@ -30,7 +30,8 @@ export const userHandlers = {
 export const userPreferencesHandlers = {
   'user-preferences:get': async (event: IpcMainInvokeEvent, userId: string) => {
     try {
-      const result = await userPreferencesService.getPreferences(userId);
+      // For authenticated users, we should ensure they have preferences
+      const result = await userPreferencesService.getOrCreatePreferences(userId);
       return result;
     } catch (error) {
       console.error('Error getting user preferences:', error);

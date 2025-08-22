@@ -77,6 +77,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   selectOCRRegion: () => ipcRenderer.invoke('select-ocr-region'),
 
+  session: {
+    start: (config: { location: string; captureInterval?: number }) => ipcRenderer.invoke('session:start', config),
+    stop: () => ipcRenderer.invoke('session:stop'),
+    status: () => ipcRenderer.invoke('session:status'),
+    stats: () => ipcRenderer.invoke('session:stats'),
+    summary: () => ipcRenderer.invoke('session:summary'),
+    current: () => ipcRenderer.invoke('session:current'),
+    updateInterval: (interval: number) => ipcRenderer.invoke('session:update-interval', { interval }),
+    testCapture: () => ipcRenderer.invoke('session:test-capture'),
+    availableLocations: () => ipcRenderer.invoke('session:available-locations'),
+    isActive: () => ipcRenderer.invoke('session:is-active'),
+    toggleScreenshots: (config: { enabled: boolean }) => ipcRenderer.invoke('session:toggle-screenshots', config),
+  },
+
   openStreamingOverlay: (data: StreamingOverlayData) => ipcRenderer.invoke('open-streaming-overlay', data),
   updateStreamingOverlay: (data: StreamingOverlayData) => ipcRenderer.invoke('update-streaming-overlay', data),
   closeStreamingOverlay: () => ipcRenderer.invoke('close-streaming-overlay'),
@@ -100,5 +114,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onStreamingOverlayBlurred: (callback: () => void) => {
     ipcRenderer.on('streaming-overlay-blurred', () => callback());
+  },
+
+  onSessionLootDetected: (callback: (event: any, data: { items: any[]; timestamp: number }) => void) => {
+    ipcRenderer.on('session:loot-detected', callback);
+  },
+
+  onSessionStatsUpdate: (callback: (event: any, data: any) => void) => {
+    ipcRenderer.on('session:stats-update', callback);
+  },
+
+  onSessionSummaryUpdate: (callback: (event: any, data: { summary: any; timestamp: number }) => void) => {
+    ipcRenderer.on('session:summary-update', callback);
   }
 });

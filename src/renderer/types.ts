@@ -278,6 +278,65 @@ declare global {
         };
         error?: string;
       }>;
+      session: {
+        start: (config: { location: string; locationId: number; captureInterval?: number }) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+        stop: () => Promise<{
+          success: boolean;
+          sessionSummary?: any;
+          error?: string;
+        }>;
+        status: () => Promise<{
+          success: boolean;
+          status?: any;
+          error?: string;
+        }>;
+        stats: () => Promise<{
+          success: boolean;
+          stats?: any;
+          error?: string;
+        }>;
+        summary: () => Promise<{
+          success: boolean;
+          summary?: any;
+          error?: string;
+        }>;
+        current: () => Promise<{
+          success: boolean;
+          session?: any;
+          error?: string;
+        }>;
+        updateInterval: (interval: number) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+        testCapture: () => Promise<{
+          success: boolean;
+          stats?: {
+            captureTime: number;
+            regionSize: string;
+            bufferSize: number;
+          };
+          imageData?: string;
+          error?: string;
+        }>;
+        availableLocations: () => Promise<{
+          success: boolean;
+          locations?: string[];
+          error?: string;
+        }>;
+        isActive: () => Promise<{
+          success: boolean;
+          isActive?: boolean;
+          error?: string;
+        }>;
+        toggleScreenshots: (config: { enabled: boolean }) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+      };
       openStreamingOverlay: (data: {
         location?: Location;
         items: Item[];
@@ -297,6 +356,9 @@ declare global {
       onStreamingOverlayClosed: (callback: () => void) => void;
       onStreamingOverlayFocused: (callback: () => void) => void;
       onStreamingOverlayBlurred: (callback: () => void) => void;
+      onSessionLootDetected: (callback: (event: any, data: { items: any[]; timestamp: number }) => void) => void;
+      onSessionStatsUpdate: (callback: (event: any, data: any) => void) => void;
+      onSessionSummaryUpdate: (callback: (event: any, data: { summary: any; timestamp: number }) => void) => void;
     };
   }
 }

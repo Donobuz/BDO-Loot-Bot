@@ -13,7 +13,7 @@ export interface OCRResult {
     error?: string;
 }
 
-export class PortableOCR {
+export class FastPortableOCR {
     private pythonPath: string;
     private ocrScriptPath: string;
     private isInitialized: boolean;
@@ -21,7 +21,7 @@ export class PortableOCR {
     constructor() {
         this.isInitialized = false;
         this.pythonPath = this.getPythonExecutable();
-        this.ocrScriptPath = this.getOCRScriptPath();
+        this.ocrScriptPath = this.getFastOCRScriptPath();
     }
 
     private getPythonExecutable(): string {
@@ -36,54 +36,55 @@ export class PortableOCR {
         }
     }
 
-    private getOCRScriptPath(): string {
+    private getFastOCRScriptPath(): string {
         const appPath = app ? app.getAppPath() : __dirname;
-        return path.join(appPath, 'resources', 'scripts', 'ocr_worker.py');
+        return path.join(appPath, 'resources', 'scripts', 'fast_ocr_worker.py');
     }
 
     public async initialize(): Promise<boolean> {
         try {
-            console.log('Checking OCR dependencies...');
+            console.log('🚀 Initializing Fast OCR engine...');
             console.log('Python path:', this.pythonPath);
-            console.log('OCR script path:', this.ocrScriptPath);
+            console.log('Fast OCR script path:', this.ocrScriptPath);
             
             // Check if Python executable exists
             if (!fs.existsSync(this.pythonPath)) {
                 console.error('❌ Python executable not found at:', this.pythonPath);
                 return false;
             }
-            console.log('✅ Python executable found');
 
-            // Check if OCR script exists
+            // Check if fast OCR script exists
             if (!fs.existsSync(this.ocrScriptPath)) {
-                console.error('❌ OCR script not found at:', this.ocrScriptPath);
-                return false;
+                console.error('❌ Fast OCR script not found at:', this.ocrScriptPath);
+                // Fall back to original OCR script
+                this.ocrScriptPath = path.join(path.dirname(this.ocrScriptPath), 'ocr_worker.py');
+                if (!fs.existsSync(this.ocrScriptPath)) {
+                    console.error('❌ No OCR script found');
+                    return false;
+                }
             }
-            console.log('✅ OCR script found');
 
-            // Test OCR initialization (this may take a while on first run)
-            console.log('🔄 Testing OCR engine initialization (may take 30-60 seconds on first run)...');
+            // Test fast OCR initialization
+            console.log('🔄 Testing Fast OCR engine...');
             const testResult = await this.testOCREngine();
-            console.log('OCR engine test result:', testResult);
             
             this.isInitialized = testResult;
             
             if (this.isInitialized) {
-                console.log('✅ OCR engine initialized successfully');
+                console.log('✅ Fast OCR engine ready!');
             } else {
-                console.error('❌ OCR engine failed to initialize');
+                console.error('❌ Fast OCR engine failed to initialize');
             }
             
             return this.isInitialized;
         } catch (error) {
-            console.error('❌ Failed to initialize OCR engine:', error);
+            console.error('❌ Failed to initialize Fast OCR engine:', error);
             return false;
         }
     }
 
     private async testOCREngine(): Promise<boolean> {
         return new Promise((resolve) => {
-            console.log('Spawning OCR test process...');
             const process = spawn(this.pythonPath, [this.ocrScriptPath, '--test'], {
                 stdio: ['pipe', 'pipe', 'pipe']
             });
@@ -93,43 +94,37 @@ export class PortableOCR {
             
             process.stdout.on('data', (data) => {
                 output += data.toString();
-                console.log('OCR stdout:', data.toString().trim());
             });
 
             process.stderr.on('data', (data) => {
                 errorOutput += data.toString();
-                console.error('OCR stderr:', data.toString().trim());
             });
 
             process.on('close', (code) => {
-                console.log(`OCR test process closed with code: ${code}`);
-                console.log('OCR output:', output);
-                if (errorOutput) {
-                    console.error('OCR errors:', errorOutput);
-                }
-                
-                try {
-                    const result = JSON.parse(output);
-                    console.log('Parsed OCR result:', result);
-                    resolve(result.success === true);
-                } catch (parseError) {
-                    console.error('Failed to parse OCR output:', parseError);
-                    console.error('Raw output was:', output);
+                if (code === 0) {
+                    try {
+                        const result = JSON.parse(output);
+                        resolve(result.success === true);
+                    } catch (parseError) {
+                        console.error('Failed to parse test result:', parseError);
+                        resolve(false);
+                    }
+                } else {
+                    console.error('Fast OCR test failed:', errorOutput);
                     resolve(false);
                 }
             });
 
             process.on('error', (error) => {
-                console.error('OCR process error:', error);
+                console.error('Fast OCR test process error:', error);
                 resolve(false);
             });
 
-            // Timeout after 120 seconds for initialization (model download)
+            // Timeout after 10 seconds for initialization
             setTimeout(() => {
-                console.log('⏰ OCR initialization timed out after 120 seconds');
                 process.kill();
                 resolve(false);
-            }, 120000);
+            }, 10000);
         });
     }
 
@@ -139,7 +134,7 @@ export class PortableOCR {
             if (!initSuccess) {
                 return {
                     success: false,
-                    error: 'OCR engine not initialized'
+                    error: 'Fast OCR engine not initialized'
                 };
             }
         }
@@ -174,7 +169,7 @@ export class PortableOCR {
                 } else {
                     resolve({
                         success: false,
-                        error: `OCR process failed with code ${code}: ${errorOutput}`
+                        error: `Fast OCR process failed with code ${code}: ${errorOutput}`
                     });
                 }
             });
@@ -182,14 +177,14 @@ export class PortableOCR {
             process.on('error', (error) => {
                 resolve({
                     success: false,
-                    error: `Failed to start OCR process: ${error.message}`
+                    error: `Failed to start Fast OCR process: ${error.message}`
                 });
             });
 
-            // Timeout after 10 seconds for OCR processing
+            // Much shorter timeout for fast OCR - 3 seconds max
             const timeout = setTimeout(() => {
                 if (!process.killed) {
-                    console.log('OCR process timed out after 10s, killing...');
+                    console.log('Fast OCR timed out after 3s, killing...');
                     process.kill('SIGTERM');
                     setTimeout(() => {
                         if (!process.killed) {
@@ -199,9 +194,9 @@ export class PortableOCR {
                 }
                 resolve({
                     success: false,
-                    error: 'OCR process timed out'
+                    error: 'Fast OCR process timed out'
                 });
-            }, 10000); // Increased back to 10 seconds
+            }, 3000); // 3 seconds for fast processing
             
             process.on('close', () => {
                 clearTimeout(timeout);
@@ -216,7 +211,7 @@ export class PortableOCR {
             fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        const tempFile = path.join(tempDir, `ocr_${Date.now()}.png`);
+        const tempFile = path.join(tempDir, `fast_ocr_${Date.now()}.png`);
         
         try {
             fs.writeFileSync(tempFile, imageBuffer);
