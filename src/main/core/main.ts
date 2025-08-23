@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
-import * as fs from 'fs';
 import { authService } from '../../services/auth';
 import { databaseService } from '../../services/db';
 import { setupLocationHandlers } from '../api/locationAPI';
@@ -9,18 +8,19 @@ import { lootTableHandlers } from '../api/lootTableAPI';
 import { userHandlers, userPreferencesHandlers } from '../api/userAPI';
 import { regionSelectorHandlers } from '../features/regionSelector/regionSelectorAPI';
 import { streamingOverlayHandlers, cleanupStreamingOverlay } from '../features/streamingOverlay/streamingOverlayAPI';
-import { sessionEventHandlers } from '../api/sessionEventAPI';
+import { sessionHandlers } from '../api/sessionAPI';
 import { StorageService } from '../../services/db/storage';
 
 // Global storage service instance
 let storageService: StorageService;
 
 // Cleanup function for when the main window refreshes or closes
-const cleanupSession = () => {
+const cleanupSession = async () => {
   console.log('Cleaning up session due to window refresh/close...');
   
   // Close streaming overlay if open
   cleanupStreamingOverlay();
+  
   
   // Broadcast cleanup event to all windows
   const allWindows = BrowserWindow.getAllWindows();
@@ -162,8 +162,8 @@ Object.entries(streamingOverlayHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 
-// Setup session event handlers
-Object.entries(sessionEventHandlers).forEach(([event, handler]) => {
+// Setup session handlers
+Object.entries(sessionHandlers).forEach(([event, handler]) => {
   ipcMain.handle(event, handler);
 });
 

@@ -4,10 +4,15 @@ export { usersService, UsersService } from './users';
 export { aclsService, AclsService } from './acls';
 export { locationService, LocationService } from './locations';
 export { itemsService, ItemsService } from './items';
+export { UserPreferencesService } from './userPreferences';
 export { StorageService } from './storage';
 
-// Type exports
-export * from './types';
+export * from './types/user';
+export * from './types/location';
+export * from './types/item';
+export * from './types/lootTable';
+export * from './types/auth';
+export * from './types/ocr';
 
 // Main database service aggregator class
 import { BaseDatabase } from './base';
@@ -15,12 +20,16 @@ import { UsersService } from './users';
 import { AclsService } from './acls';
 import { LocationService } from './locations';
 import { ItemsService } from './items';
+import { UserPreferencesService } from './userPreferences';
+import { LootTableService } from './lootTables';
 
 export class DatabaseService extends BaseDatabase {
   public users: UsersService;
   public acls: AclsService;
   public locations: LocationService;
   public items: ItemsService;
+  public userPreferences: UserPreferencesService;
+  public lootTables: LootTableService;
 
   constructor() {
     super();
@@ -28,6 +37,8 @@ export class DatabaseService extends BaseDatabase {
     this.acls = new AclsService();
     this.locations = new LocationService();
     this.items = new ItemsService();
+    this.userPreferences = new UserPreferencesService();
+    this.lootTables = new LootTableService();
   }
 
   // Health check method that tests all service connections

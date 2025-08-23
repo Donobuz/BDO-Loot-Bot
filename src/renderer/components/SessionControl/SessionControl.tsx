@@ -42,7 +42,9 @@ export const SessionControl: React.FC<SessionControlProps> = ({
   >(new Map());
   const [isOverlayFocused, setIsOverlayFocused] = useState(false);
   const [streamingOverlayOpen, setStreamingOverlayOpen] = useState(false);
-  
+  const [ocrSessionStatus, setOcrSessionStatus] = useState<any>(null);
+  const [screenshotSavingEnabled, setScreenshotSavingEnabled] = useState(true);
+
   // Tax calculation state (local state, not saved until session starts)
   const [taxSettings, setTaxSettings] = useState<TaxCalculations>({
     value_pack: userPreferences.tax_calculations?.value_pack ?? false,
@@ -76,23 +78,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
   const handleOverlayClosed = () => {
     setStreamingOverlayOpen(false);
-  };
-
-  const handleSessionCleanup = (data: any) => {
-    // Stop current session if active
-    if (session.isActive) {
-      setSession(prev => ({
-        ...prev,
-        isActive: false,
-        startTime: undefined,
-        itemCounts: new Map()
-      }));
-    }
-    
-    // Close overlay if open
-    if (streamingOverlayOpen) {
-      setStreamingOverlayOpen(false);
-    }
   };
 
   const handleItemDetected = (event: any, data: any) => {
@@ -133,7 +118,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     }
   }, [selectedLocation]);
 
-  // Listen for streaming overlay events
+  // Listen for streaming overlay events and check OCR session status
   useEffect(() => {
     // Set up the listeners
     window.electronAPI.onStreamingOverlayOpened(handleOverlayOpened);
@@ -144,7 +129,11 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     window.electronAPI.onStreamingOverlayBlurred(() => {
       setIsOverlayFocused(false);
     });
-    window.electronAPI.onSessionCleanup(handleSessionCleanup);
+    
+    // Listen for new session events
+    window.electronAPI.onSessionLootDetected(handleSessionLootDetected);
+    window.electronAPI.onSessionStatsUpdate(handleSessionStatsUpdate);
+    window.electronAPI.onSessionSummaryUpdate(handleSessionSummaryUpdate);
 
     // Check initial state on mount
     const checkInitialState = async () => {
@@ -160,31 +149,46 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
     checkInitialState();
 
+    // Check OCR session status periodically when session is active
+    const statusInterval = setInterval(async () => {
+      if (session.isActive) {
+        try {
+          const statusResult = await window.electronAPI.session.status();
+          if (statusResult.success) {
+            setOcrSessionStatus(statusResult.status);
+          }
+        } catch (error) {
+          console.error('Failed to get OCR session status:', error);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+
     return () => {
+      clearInterval(statusInterval);
       // Note: IPC listeners in Electron renderer are managed by the main process
     };
-  }, []);
+  }, [session.isActive]);
 
   // Prevent page refresh when session is active
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for Cmd+R (Mac) or Ctrl+R (Windows/Linux) or F5
-      const isRefreshShortcut = 
+      const isRefreshShortcut =
         (event.metaKey && event.key === 'r') || // Cmd+R (Mac)
         (event.ctrlKey && event.key === 'r') || // Ctrl+R (Windows/Linux)
         event.key === 'F5'; // F5
 
       if (isRefreshShortcut && (session.isActive || (streamingOverlayOpen && !isOverlayFocused))) {
         event.preventDefault();
-        
+
         const modalId = 'refresh-warning';
-        
+
         // Show confirmation modal
         showModal({
           id: modalId,
           type: 'confirmation',
           title: 'Refresh Warning',
-          message: session.isActive 
+          message: session.isActive
             ? 'You have an active grinding session. Refreshing will stop your session and all progress will be lost. Are you sure you want to continue?'
             : 'You have a streaming overlay open. Refreshing will close the overlay. Are you sure you want to continue?',
           confirmText: 'Continue',
@@ -226,7 +230,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         postTaxValue: calculateTotalValue(),
         taxBreakdown: getTaxBreakdown()
       };
-      
+
       // Update overlay directly
       window.electronAPI.updateStreamingOverlay(overlayData).catch(error => {
         console.error('Failed to update streaming overlay:', error);
@@ -370,7 +374,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
       if (targetItem) {
         const targetPreTaxPrice = targetItem.last_sold_price || targetItem.base_price;
-        
+
         if (applyTaxCalculations) {
           // Calculate the post-tax value of the target marketplace item
           const targetPostTaxPrice = calculatePostTaxValue(
@@ -379,7 +383,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
             taxSettings.rich_merchant_ring,
             taxSettings.family_fame
           );
-          
+
           // Use the post-tax price divided by conversion ratio
           calculatedPrice = targetPostTaxPrice / item.conversion_ratio;
         } else {
@@ -393,7 +397,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         );
         if (fallbackItem) {
           const targetPreTaxPrice = fallbackItem.last_sold_price || fallbackItem.base_price;
-          
+
           if (applyTaxCalculations) {
             // Calculate the post-tax value of the target marketplace item
             const targetPostTaxPrice = calculatePostTaxValue(
@@ -402,7 +406,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
               taxSettings.rich_merchant_ring,
               taxSettings.family_fame
             );
-            
+
             // Use the post-tax price divided by conversion ratio
             calculatedPrice = targetPostTaxPrice / item.conversion_ratio;
           } else {
@@ -433,10 +437,26 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         userPreferences.user_id,
         { tax_calculations: taxSettings }
       );
-      
+
       if (!result.success) {
         console.error("Failed to save tax settings:", result.error);
         // Continue with session start even if tax settings failed to save
+      }
+
+      // Start OCR session if OCR region is configured
+      if (hasOCRRegion) {
+        const ocrResult = await window.electronAPI.session.start({
+          location: selectedLocation.name,
+          locationId: selectedLocation.id,
+          captureInterval: 750 // 750ms with state sync for accurate BDO loot detection
+        });
+
+        if (!ocrResult.success) {
+          console.error("Failed to start OCR session:", ocrResult.error);
+          // Continue with manual session even if OCR fails
+        } else {
+          console.log("OCR session started successfully");
+        }
       }
 
       const newSession = {
@@ -445,14 +465,28 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         location: selectedLocation,
         itemCounts: new Map(),
       };
-      
+
       setSession(newSession);
+
     } catch (error) {
       console.error("Failed to start session:", error);
     }
   };
 
   const handleStopSession = async () => {
+    // Stop OCR session if it's running
+    try {
+      const ocrResult = await window.electronAPI.session.stop();
+      if (ocrResult.success) {
+        console.log("OCR session stopped successfully");
+        if (ocrResult.sessionSummary) {
+          console.log("Session summary:", ocrResult.sessionSummary);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to stop OCR session:', error);
+    }
+
     // Close streaming overlay if it's open
     if (streamingOverlayOpen) {
       try {
@@ -462,11 +496,11 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         console.error('Failed to close streaming overlay:', error);
       }
     }
-    
+
     // Reset session state
-    setSession({ 
-      isActive: false, 
-      itemCounts: new Map() 
+    setSession({
+      isActive: false,
+      itemCounts: new Map()
     });
   };
 
@@ -486,9 +520,9 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         postTaxValue: session.isActive ? calculateTotalValue() : 0,
         taxBreakdown: session.isActive ? getTaxBreakdown() : null
       };
-      
+
       const result = await window.electronAPI.openStreamingOverlay(overlayData);
-      
+
       if (!result.success) {
         console.error('Failed to open streaming overlay:', result.error);
       }
@@ -498,16 +532,106 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     }
   };
 
+  const handleSessionLootDetected = (event: any, data: { items: any[]; timestamp: number }) => {
+    console.log('Received session:loot-detected event:', data);
+    
+    if (!session.isActive) {
+      console.log('Session not active, ignoring loot detection');
+      return;
+    }
+
+    // Process each detected item
+    data.items.forEach(item => {
+      const matchingItem = lootTableItems.find(lootItem => 
+        lootItem.name.toLowerCase() === item.name.toLowerCase() ||
+        lootItem.name.toLowerCase().includes(item.name.toLowerCase()) ||
+        item.name.toLowerCase().includes(lootItem.name.toLowerCase())
+      );
+
+      if (matchingItem) {
+        console.log(`Matched OCR item "${item.name}" to database item "${matchingItem.name}" (ID: ${matchingItem.id})`);
+        
+        // Update item counts
+        setSession(prev => {
+          const newItemCounts = new Map(prev.itemCounts);
+          const currentCount = newItemCounts.get(matchingItem.id) || 0;
+          newItemCounts.set(matchingItem.id, currentCount + item.quantity);
+          
+          return {
+            ...prev,
+            itemCounts: newItemCounts
+          };
+        });
+      } else {
+        console.warn(`Could not match OCR item "${item.name}" to any item in the loot table`);
+      }
+    });
+  };
+
+  const handleSessionStatsUpdate = (event: any, data: any) => {
+    console.log('Received session:stats-update event:', data);
+    // Update any stats-related UI here if needed
+  };
+
+  const handleSessionSummaryUpdate = (event: any, data: { summary: any; timestamp: number }) => {
+    console.log('Received session:summary-update event:', data);
+    
+    if (!session.isActive) {
+      console.log('Session not active, ignoring summary update');
+      return;
+    }
+
+    // Update session data from summary
+    if (data.summary && data.summary.loot) {
+      setSession(prev => {
+        const newItemCounts = new Map(prev.itemCounts);
+        
+        // Update counts based on summary loot data
+        Object.entries(data.summary.loot).forEach(([itemName, count]) => {
+          const matchingItem = lootTableItems.find(lootItem => 
+            lootItem.name.toLowerCase() === itemName.toLowerCase()
+          );
+          
+          if (matchingItem && typeof count === 'number') {
+            newItemCounts.set(matchingItem.id, count);
+          }
+        });
+        
+        return {
+          ...prev,
+          itemCounts: newItemCounts
+        };
+      });
+    }
+  };
+
+  const handleToggleScreenshots = async () => {
+    try {
+      const newValue = !screenshotSavingEnabled;
+      const result = await window.electronAPI.session.toggleScreenshots({
+        enabled: newValue
+      });
+      
+      if (result.success) {
+        setScreenshotSavingEnabled(newValue);
+      } else {
+        console.error('Failed to toggle screenshots:', result.error);
+      }
+    } catch (error) {
+      console.error('Error toggling screenshots:', error);
+    }
+  };
+
 
 
   const calculateTotalValue = (): number => {
     let totalValue = 0;
     lootTableItems.forEach(item => {
       const count = session.itemCounts.get(item.id) || 0;
-      
+
       // During active session, calculate the post-tax price for each item
       let postTaxPrice = 0;
-      
+
       if (item.type === "marketplace") {
         // Use the raw price from calculatedPrice and apply tax
         const preTaxPrice = item.calculatedPrice; // This is the raw price since we loaded with applyTaxCalculations=false
@@ -524,12 +648,12 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         // For conversion items, the calculatedPrice is already the raw conversion value
         // We need to apply tax to the target marketplace item and then divide by conversion ratio
         const userRegion = userPreferences.preferred_region;
-        const targetItem = lootTableItems.find(i => 
-          i.bdo_item_id === item.convertible_to_bdo_item_id && 
-          i.region === userRegion && 
+        const targetItem = lootTableItems.find(i =>
+          i.bdo_item_id === item.convertible_to_bdo_item_id &&
+          i.region === userRegion &&
           i.type === "marketplace"
         );
-        
+
         if (targetItem) {
           // Use the target item's raw price and apply tax
           const targetPostTaxPrice = calculatePostTaxValue(
@@ -553,7 +677,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
           postTaxPrice = taxedMarketplacePrice / item.conversion_ratio;
         }
       }
-      
+
       totalValue += count * Math.round(postTaxPrice);
     });
     return totalValue;
@@ -561,14 +685,14 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
   const calculateGrossValue = (): number => {
     let grossValue = 0;
-    
+
     lootTableItems.forEach(item => {
       const count = session.itemCounts.get(item.id) || 0;
       // Use the raw calculatedPrice since it was loaded with applyTaxCalculations=false
       const preTaxPrice = item.calculatedPrice;
       grossValue += count * preTaxPrice;
     });
-    
+
     return grossValue;
   };
 
@@ -577,11 +701,11 @@ export const SessionControl: React.FC<SessionControlProps> = ({
     let taxableGrossValue = 0;
     let taxablePostTaxValue = 0;
     let nonTaxableValue = 0;
-    
+
     // Calculate taxable and non-taxable values separately
     lootTableItems.forEach(item => {
       const count = session.itemCounts.get(item.id) || 0;
-      
+
       if (item.type === "trash_loot") {
         // Trash loot is not taxed - use calculatedPrice directly
         nonTaxableValue += count * item.calculatedPrice;
@@ -598,12 +722,12 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         taxablePostTaxValue += count * postTaxPrice;
       } else if (item.type === "conversion" && item.convertible_to_bdo_item_id && item.conversion_ratio) {
         // Conversion items use the post-tax value of their target marketplace item
-        const targetItem = lootTableItems.find(i => 
-          i.bdo_item_id === item.convertible_to_bdo_item_id && 
-          i.region === userRegion && 
+        const targetItem = lootTableItems.find(i =>
+          i.bdo_item_id === item.convertible_to_bdo_item_id &&
+          i.region === userRegion &&
           i.type === "marketplace"
         );
-        
+
         if (targetItem) {
           // Use the target item's calculatedPrice as the pre-tax marketplace price
           const targetPreTaxPrice = targetItem.calculatedPrice;
@@ -613,16 +737,16 @@ export const SessionControl: React.FC<SessionControlProps> = ({
             taxSettings.rich_merchant_ring,
             taxSettings.family_fame
           );
-          
+
           const conversionPreTaxPrice = targetPreTaxPrice / item.conversion_ratio;
           const conversionPostTaxPrice = targetPostTaxPrice / item.conversion_ratio;
-          
+
           taxableGrossValue += count * conversionPreTaxPrice;
           taxablePostTaxValue += count * conversionPostTaxPrice;
         } else {
           // Fallback: use the conversion item's calculatedPrice
           const conversionPreTaxPrice = item.calculatedPrice;
-          
+
           // Estimate the marketplace price this represents and apply tax
           const estimatedMarketplacePrice = conversionPreTaxPrice * item.conversion_ratio;
           const taxedMarketplacePrice = calculatePostTaxValue(
@@ -632,18 +756,18 @@ export const SessionControl: React.FC<SessionControlProps> = ({
             taxSettings.family_fame
           );
           const conversionPostTaxPrice = taxedMarketplacePrice / item.conversion_ratio;
-          
+
           taxableGrossValue += count * conversionPreTaxPrice;
           taxablePostTaxValue += count * conversionPostTaxPrice;
         }
       }
     });
-    
+
     const totalGrossValue = taxableGrossValue + nonTaxableValue;
     const totalPostTaxValue = taxablePostTaxValue + nonTaxableValue;
     const taxAmount = taxableGrossValue - taxablePostTaxValue;
     const effectiveTaxRate = taxableGrossValue > 0 ? (taxAmount / taxableGrossValue) * 100 : 0;
-    
+
     return {
       grossValue: totalGrossValue,
       postTaxValue: totalPostTaxValue,
@@ -658,14 +782,6 @@ export const SessionControl: React.FC<SessionControlProps> = ({
         familyFame: taxSettings.family_fame
       }
     };
-  };
-
-  const formatSessionDuration = (startTime: Date): string => {
-    const currentTime = new Date();
-    const diff = currentTime.getTime() - startTime.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   // If session is active, render the ActiveSession component
@@ -695,6 +811,47 @@ export const SessionControl: React.FC<SessionControlProps> = ({
 
       {hasOCRRegion ? (
         <div className='session-ready'>
+          {/* OCR Status Debug Panel */}
+          {ocrSessionStatus && (
+            <div style={{
+              background: 'var(--background-secondary)',
+              padding: '8px',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              fontSize: '0.8rem',
+              border: '1px solid var(--border-color)'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>OCR Session Status:</div>
+              <div>Active: {ocrSessionStatus.sessionManagerActive ? '✅' : '❌'}</div>
+              <div>OCR Ready: {ocrSessionStatus.ocrReady ? '✅' : '❌'}</div>
+              <div>Location: {ocrSessionStatus.currentLocation || 'None'}</div>
+              {ocrSessionStatus.stats && (
+                <>
+                  <div>Captures: {ocrSessionStatus.stats.capturesPerformed}</div>
+                  <div>Success: {ocrSessionStatus.stats.successfulCaptures}</div>
+                  <div>Items Found: {ocrSessionStatus.stats.itemsDetected}</div>
+                  <div>Avg Processing: {Math.round(ocrSessionStatus.stats.averageProcessingTime)}ms</div>
+                </>
+              )}
+              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox"
+                    checked={screenshotSavingEnabled}
+                    onChange={handleToggleScreenshots}
+                    style={{ marginRight: '4px' }}
+                  />
+                  Save Screenshots
+                </label>
+                {screenshotSavingEnabled && (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                    (Saved to resources/session-screenshots)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className='location-selection'>
             <label htmlFor='location-select' className='location-label'>
               Select Grinding Location:
@@ -711,7 +868,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                 primary: location.name,
                 secondary: `AP: ${location.ap}, DP: ${location.dp}`
               })}
-              searchFunction={(location, searchTerm) => 
+              searchFunction={(location, searchTerm) =>
                 location.name.toLowerCase().includes(searchTerm.toLowerCase())
               }
             />
@@ -738,7 +895,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                       </span>
                     </label>
                   </div>
-                  
+
                   <div className='tax-setting-item'>
                     <label className='tax-checkbox-label'>
                       <input
@@ -754,7 +911,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                       </span>
                     </label>
                   </div>
-                  
+
                   <div className='tax-setting-item family-fame-item'>
                     <label className='tax-fame-label'>
                       <span className='tax-setting-text'>Family Fame:</span>
@@ -776,10 +933,10 @@ export const SessionControl: React.FC<SessionControlProps> = ({
                     </label>
                   </div>
                 </div>
-                <p style={{ 
-                  margin: '8px 0 0 0', 
-                  fontSize: '0.75rem', 
-                  color: 'var(--text-secondary)', 
+                <p style={{
+                  margin: '8px 0 0 0',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-secondary)',
                   fontStyle: 'italic',
                   textAlign: 'center'
                 }}>
@@ -852,6 +1009,53 @@ export const SessionControl: React.FC<SessionControlProps> = ({
               disabled={!selectedLocation || lootTableItems.length === 0}
             >
               Start Loot Detection
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const result = await window.electronAPI.session.testCapture();
+                  if (result.success) {
+                    console.log('Test capture successful:', result.stats);
+
+                    // Show preview in a simple alert for now (we can enhance this later)
+                    if (result.imageData) {
+                      // Create a temporary window to show the image
+                      const previewWindow = window.open('', '_blank', 'width=600,height=500');
+                      if (previewWindow) {
+                        previewWindow.document.write(`
+                          <html>
+                            <head><title>Test Capture Preview</title></head>
+                            <body style="margin: 0; padding: 20px; text-align: center; font-family: Arial, sans-serif;">
+                              <h3>Test Capture Preview</h3>
+                              <p>Captured region (${result.stats?.regionSize}) in ${result.stats?.captureTime}ms</p>
+                              <img src="${result.imageData}" alt="Captured region" style="max-width: 100%; max-height: 400px; border: 1px solid #ccc; border-radius: 4px;" />
+                              <p style="font-size: 0.8em; color: #666; margin-top: 8px;">
+                                This is what the OCR system sees. Make sure loot messages appear in this area.
+                              </p>
+                              <button onclick="window.close()" style="margin-top: 20px; padding: 10px 20px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                            </body>
+                          </html>
+                        `);
+                        previewWindow.document.close();
+                      } else {
+                        alert(`Test capture successful!\nCapture time: ${result.stats?.captureTime}ms\nRegion size: ${result.stats?.regionSize}\nBuffer size: ${result.stats?.bufferSize} bytes\n\nNote: Could not open preview window. Check if popups are blocked.`);
+                      }
+                    } else {
+                      alert(`Test capture successful!\nCapture time: ${result.stats?.captureTime}ms\nRegion size: ${result.stats?.regionSize}\nBuffer size: ${result.stats?.bufferSize} bytes`);
+                    }
+                  } else {
+                    console.error('Test capture failed:', result.error);
+                    alert(`Test capture failed: ${result.error}`);
+                  }
+                } catch (error) {
+                  console.error('Test capture error:', error);
+                  alert(`Test capture error: ${error}`);
+                }
+              }}
+              className='configure-button secondary'
+              disabled={!hasOCRRegion}
+            >
+              Test Capture
             </button>
             <button
               onClick={onOpenSettings}

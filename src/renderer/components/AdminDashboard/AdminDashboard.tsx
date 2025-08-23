@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User } from '../../types';
 import { getDiscordAvatarUrl, getDefaultAvatarSvg } from '../../utils/avatarUtils';
 import { LocationManagement } from './LocationManagement';

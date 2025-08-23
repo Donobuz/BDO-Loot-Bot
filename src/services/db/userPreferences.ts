@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { UserPreferences, TaxCalculations } from './types';
+import { UserPreferences, UserPreferencesUpdate } from './types/user';
 
 export class UserPreferencesService extends BaseDatabase {
   constructor() {
@@ -7,7 +7,10 @@ export class UserPreferencesService extends BaseDatabase {
   }
 
   /**
-   * Get user preferences by user ID
+   * Get user preferences by user ID (without creating if they don't exist)
+   * Use this only when you explicitly want to check if preferences exist
+   * For most cases, use getOrCreatePreferences instead
+   * @param userId - The user.id (row ID from users table), NOT discord_id
    */
   async getPreferences(userId: string): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
@@ -44,7 +47,7 @@ export class UserPreferencesService extends BaseDatabase {
   /**
    * Create user preferences
    */
-  async createPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async createPreferences(userId: string, preferences: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
       const { data, error } = await this.supabase
         .from('user_preferences')
@@ -53,7 +56,9 @@ export class UserPreferencesService extends BaseDatabase {
           preferred_region: preferences.preferred_region || 'NA',
           display_regions: preferences.display_regions || ['NA'],
           designated_ocr_region: preferences.designated_ocr_region || null,
-          tax_calculations: preferences.tax_calculations || null
+          tax_calculations: preferences.tax_calculations || null,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString()
         })
         .select()
         .single();
@@ -82,9 +87,9 @@ export class UserPreferencesService extends BaseDatabase {
   /**
    * Update user preferences
    */
-  async updatePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async updatePreferences(userId: string, preferences: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
-      const updates: any = {};
+      const updates: UserPreferencesUpdate = {};
 
       if (preferences.preferred_region !== undefined) {
         updates.preferred_region = preferences.preferred_region;
@@ -107,7 +112,7 @@ export class UserPreferencesService extends BaseDatabase {
       }
 
       // Manually set the updated timestamp
-      updates.updated = new Date().toISOString();
+      (updates as any).updated = new Date().toISOString();
 
       const { data, error } = await this.supabase
         .from('user_preferences')
@@ -139,18 +144,28 @@ export class UserPreferencesService extends BaseDatabase {
 
   /**
    * Get or create user preferences (upsert pattern)
+   * @param userId - The user.id (row ID from users table), NOT discord_id
    */
-  async getOrCreatePreferences(userId: string, defaultPreferences?: Partial<UserPreferences>): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
+  async getOrCreatePreferences(userId: string, defaultPreferences?: UserPreferencesUpdate): Promise<{ success: boolean; data?: UserPreferences; error?: string }> {
     try {
       // Try to get existing preferences
       const existingResult = await this.getPreferences(userId);
-      
+
       if (existingResult.success && existingResult.data) {
         return existingResult;
       }
 
-      // Create new preferences if they don't exist
+      // Only create new preferences if the user exists
+      // This will fail with foreign key constraint if user doesn't exist
       const createResult = await this.createPreferences(userId, defaultPreferences || {});
+
+      if (!createResult.success && createResult.error?.includes('foreign key constraint')) {
+        return {
+          success: false,
+          error: 'User not found. Please ensure the user is authenticated and exists in the database.'
+        };
+      }
+
       return createResult;
     } catch (error) {
       console.error('Error getting or creating user preferences:', error);

@@ -1,5 +1,6 @@
 import { BaseDatabase } from './base';
-import { User, DiscordUser } from './types';
+import { User, UserUpdate } from './types/user';
+import { DiscordUser } from './types/auth';
 import { aclsService } from './acls';
 
 class UsersService extends BaseDatabase {
@@ -39,6 +40,8 @@ class UsersService extends BaseDatabase {
             discord_id: discordUser.id,
             username: discordUser.username,
             avatar: discordUser.avatar,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString()
           }])
           .select()
           .single();
@@ -93,7 +96,7 @@ class UsersService extends BaseDatabase {
     }
   }
 
-  async updateUser(id: number, updates: Partial<Omit<User, 'id' | 'discord_id' | 'created' | 'updated'>>): Promise<User> {
+  async updateUser(id: number, updates: UserUpdate): Promise<User> {
     try {
       const { data, error } = await this.supabase
         .from('users')

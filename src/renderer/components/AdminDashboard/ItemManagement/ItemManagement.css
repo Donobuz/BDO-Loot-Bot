@@ -34,7 +34,7 @@
   -webkit-text-fill-color: transparent;
 }
 
-.header-controls {
+.item-management .header-controls {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -43,7 +43,7 @@
   flex-wrap: wrap;
 }
 
-.header-controls .btn {
+.item-management .header-controls .btn {
   min-width: 120px !important;
   white-space: nowrap;
   flex-shrink: 0 !important; /* Prevent shrinking */
@@ -59,11 +59,11 @@
 
 /* Responsive design for smaller screens */
 @media (max-width: 1200px) {
-  .header-controls {
+  .item-management .header-controls {
     gap: 12px;
   }
   
-  .header-controls .btn {
+  .item-management .header-controls .btn {
     min-width: 120px !important; /* Keep consistent minimum width */
     height: 44px !important; /* Keep consistent height */
     padding: 10px 20px !important;
@@ -83,7 +83,7 @@
     gap: 16px;
   }
   
-  .header-controls {
+  .item-management .header-controls {
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
@@ -92,12 +92,12 @@
     grid-gap: 8px;
   }
   
-  .header-controls .region-filter {
+  .item-management .header-controls .region-filter {
     grid-column: 1 / -1; /* Full width for region selector */
     margin-bottom: 8px;
   }
   
-  .header-controls .btn {
+  .item-management .header-controls .btn {
     min-width: 0 !important; /* Allow buttons to fill grid space */
     width: 100% !important; /* Full width within grid cell */
     height: 44px !important;
@@ -112,7 +112,7 @@
 }
 
 @media (max-width: 600px) {
-  .header-controls .btn {
+  .item-management .header-controls .btn {
     font-size: 13px !important;
     padding: 10px 8px !important;
   }
@@ -131,7 +131,7 @@
     padding: 16px;
   }
   
-  .header-controls {
+  .item-management .header-controls {
     flex-direction: column;
     gap: 8px;
     align-items: center; /* Center the buttons */
@@ -153,7 +153,7 @@
     max-width: 200px;
   }
   
-  .header-controls .btn {
+  .item-management .header-controls .btn {
     min-width: 120px !important; /* Keep consistent minimum width */
     max-width: 200px;
     height: 44px !important; /* Keep consistent height */
@@ -208,7 +208,7 @@
 }
 
 /* Item Management specific overrides */
-.header-controls .btn {
+.item-management .header-controls .btn {
   min-width: 120px !important;
   white-space: nowrap;
   flex-shrink: 0 !important;
@@ -220,7 +220,7 @@
   margin-bottom: 24px;
 }
 
-.search-container {
+.item-search-container {
   position: relative;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -231,7 +231,7 @@
   z-index: 1;
 }
 
-.search-input {
+.item-search-input {
   width: 100%;
   padding: 16px 20px 16px 56px;
   border: 2px solid transparent;
@@ -247,18 +247,18 @@
   pointer-events: auto;
 }
 
-.search-input:focus {
+.item-search-input:focus {
   outline: none;
   border-color: #5865f2;
   box-shadow: 0 0 0 4px rgba(88, 101, 242, 0.2);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.search-input::placeholder {
+.item-search-input::placeholder {
   color: var(--text-muted);
 }
 
-.search-icon {
+.item-search-icon {
   position: absolute;
   left: 20px;
   top: 50%;

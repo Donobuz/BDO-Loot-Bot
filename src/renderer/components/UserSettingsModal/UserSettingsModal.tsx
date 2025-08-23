@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPreferences, TaxCalculations } from '../../types';
+import { UserPreferences, TaxCalculations, UserPreferencesUpdate } from '../../types';
 import { BDO_REGIONS } from '../../constants/regions';
 import { TAX_CONSTANTS } from '../../constants/taxes';
 import { formatTaxRate } from '../../utils/taxCalculations';
@@ -18,7 +18,7 @@ interface UserSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentPreferences: UserPreferences;
-  onSave: (preferences: Partial<UserPreferences>) => Promise<void>;
+  onSave: (preferences: UserPreferencesUpdate) => Promise<void>;
   isLoading?: boolean;
   focusSection?: 'ocr' | null; // Add prop to focus on specific section
 }

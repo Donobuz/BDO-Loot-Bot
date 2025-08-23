@@ -179,9 +179,9 @@ export const SearchableSelect = <T extends BaseOption>({
   const placeholderText = loading ? "Loading..." : placeholder;
 
   return (
-    <div className={`searchable-select ${disabled ? 'disabled' : ''}`} ref={dropdownRef}>
+    <div className={`searchable-select-component ${disabled ? 'disabled' : ''}`} ref={dropdownRef}>
       <div 
-        className={`select-input ${isOpen ? 'open' : ''}`}
+        className={`searchable-select-input ${isOpen ? 'open' : ''}`}
         onClick={handleInputClick}
       >
         <input
@@ -192,18 +192,18 @@ export const SearchableSelect = <T extends BaseOption>({
           onKeyDown={handleKeyDown}
           placeholder={placeholderText}
           disabled={disabled || loading}
-          className="search-input"
+          className="searchable-select-search-input"
           autoComplete="off"
         />
-        <div className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>
+        <div className={`searchable-select-dropdown-arrow ${isOpen ? 'open' : ''}`}>
           ▼
         </div>
       </div>
 
       {isOpen && !disabled && !loading && (
-        <ul className="options-list" ref={listRef}>
+        <ul className="searchable-select-options-list" ref={listRef}>
           {filteredOptions.length === 0 ? (
-            <li className="no-options">
+            <li className="searchable-select-no-options">
               {searchTerm ? `No locations found for "${searchTerm}"` : 'No locations available'}
             </li>
           ) : (
@@ -212,13 +212,13 @@ export const SearchableSelect = <T extends BaseOption>({
               return (
                 <li
                   key={option.id}
-                  className={`option ${index === highlightedIndex ? 'highlighted' : ''}`}
+                  className={`searchable-select-option ${index === highlightedIndex ? 'highlighted' : ''}`}
                   onClick={() => handleSelectOption(option)}
                   onMouseEnter={() => setHighlightedIndex(index)}
                 >
-                  <span className="option-name">{optionDisplay.primary}</span>
+                  <span className="searchable-select-option-name">{optionDisplay.primary}</span>
                   {optionDisplay.secondary && (
-                    <span className="option-stats">{optionDisplay.secondary}</span>
+                    <span className="searchable-select-option-stats">{optionDisplay.secondary}</span>
                   )}
                 </li>
               );

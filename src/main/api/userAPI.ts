@@ -1,6 +1,7 @@
 import { usersService } from '../../services/db/users';
 import { UserPreferencesService } from '../../services/db/userPreferences';
 import { IpcMainInvokeEvent } from 'electron';
+import { UserUpdate, UserPreferencesUpdate } from '../../services/db/types/user';
 
 const userPreferencesService = new UserPreferencesService();
 
@@ -15,7 +16,7 @@ export const userHandlers = {
     }
   },
 
-  'user:update': async (event: IpcMainInvokeEvent, id: number, updates: any) => {
+  'user:update': async (event: IpcMainInvokeEvent, id: number, updates: UserUpdate) => {
     try {
       const updatedUser = await usersService.updateUser(id, updates);
       return { success: true, data: updatedUser };
@@ -29,7 +30,8 @@ export const userHandlers = {
 export const userPreferencesHandlers = {
   'user-preferences:get': async (event: IpcMainInvokeEvent, userId: string) => {
     try {
-      const result = await userPreferencesService.getPreferences(userId);
+      // For authenticated users, we should ensure they have preferences
+      const result = await userPreferencesService.getOrCreatePreferences(userId);
       return result;
     } catch (error) {
       console.error('Error getting user preferences:', error);
@@ -37,7 +39,7 @@ export const userPreferencesHandlers = {
     }
   },
 
-  'user-preferences:update': async (event: IpcMainInvokeEvent, userId: string, preferences: any) => {
+  'user-preferences:update': async (event: IpcMainInvokeEvent, userId: string, preferences: UserPreferencesUpdate) => {
     try {
       const result = await userPreferencesService.updatePreferences(userId, preferences);
       return result;
@@ -47,7 +49,7 @@ export const userPreferencesHandlers = {
     }
   },
 
-  'user-preferences:create': async (event: IpcMainInvokeEvent, userId: string, preferences: any) => {
+  'user-preferences:create': async (event: IpcMainInvokeEvent, userId: string, preferences: UserPreferencesUpdate) => {
     try {
       const result = await userPreferencesService.createPreferences(userId, preferences);
       return result;
@@ -57,7 +59,7 @@ export const userPreferencesHandlers = {
     }
   },
 
-  'user-preferences:get-or-create': async (event: IpcMainInvokeEvent, userId: string, defaultPreferences: any) => {
+  'user-preferences:get-or-create': async (event: IpcMainInvokeEvent, userId: string, defaultPreferences?: UserPreferencesUpdate) => {
     try {
       const result = await userPreferencesService.getOrCreatePreferences(userId, defaultPreferences);
       return result;

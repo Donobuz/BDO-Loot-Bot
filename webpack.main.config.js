@@ -45,13 +45,6 @@ module.exports = [
               fs.copyFileSync(htmlSrc, htmlDest);
             }
             
-            // Copy regionSelectorPreload.js
-            const jsSrc = path.resolve(__dirname, 'src/main/features/regionSelector/regionSelectorPreload.js');
-            const jsDest = path.resolve(__dirname, 'dist/main/regionSelectorPreload.js');
-            if (fs.existsSync(jsSrc)) {
-              fs.copyFileSync(jsSrc, jsDest);
-            }
-            
             // Copy streamingOverlay.html
             const overlayHtmlSrc = path.resolve(__dirname, 'src/main/features/streamingOverlay/streamingOverlay.html');
             const overlayHtmlDest = path.resolve(__dirname, 'dist/main/streamingOverlay.html');
@@ -85,6 +78,35 @@ module.exports = [
     output: {
       path: path.resolve(__dirname, 'dist/main'),
       filename: 'preload.js'
+    },
+    resolve: {
+      extensions: ['.ts', '.js']
+    },
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          use: 'ts-loader',
+          exclude: /node_modules/
+        }
+      ]
+    },
+    plugins: [
+      new webpack.DefinePlugin(envKeys)
+    ],
+    node: {
+      __dirname: false,
+      __filename: false
+    }
+  },
+  // Region selector preload script configuration
+  {
+    mode: 'development',
+    target: 'electron-preload',
+    entry: './src/main/features/regionSelector/regionSelectorPreload.ts',
+    output: {
+      path: path.resolve(__dirname, 'dist/main'),
+      filename: 'regionSelectorPreload.js'
     },
     resolve: {
       extensions: ['.ts', '.js']

@@ -1,7 +1,6 @@
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { BaseDatabase } from './base';
 import { SUPABASE_CONFIG } from '../../config/config';
-import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -138,7 +137,7 @@ export class StorageService extends BaseDatabase {
       const fileName = `${itemId || 'temp'}_${uuidv4()}${fileExtension}`;
 
       // Upload to Supabase Storage using admin client
-      const { data: uploadData, error: uploadError } = await this.adminClient.storage
+      const { data: _uploadData, error: uploadError } = await this.adminClient.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, imageBuffer, {
           contentType: this.getMimeType(fileExtension),
@@ -278,7 +277,7 @@ export class StorageService extends BaseDatabase {
       const fileName = `bdo_item_${bdoItemId}_${uuidv4()}${fileExtension}`;
 
       // Upload to Supabase Storage using admin client
-      const { data: uploadData, error: uploadError } = await this.adminClient.storage
+      const { data: _uploadData, error: uploadError } = await this.adminClient.storage
         .from(this.BUCKET_NAME)
         .upload(fileName, imageBuffer, {
           contentType: this.getMimeType(fileExtension),
@@ -318,7 +317,7 @@ export class StorageService extends BaseDatabase {
 
     try {
       // Test service role functionality
-      const { data, error } = await this.adminClient.storage.listBuckets();
+      const { data: _data, error } = await this.adminClient.storage.listBuckets();
       
       if (error) {
         console.error('❌ Service role test failed:', error);

@@ -1,4 +1,4 @@
-/* Modern Location Management Component Styles */
+/* Combined Location Management Component Styles */
 
 .location-management {
   padding: 24px 32px;
@@ -21,6 +21,9 @@
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--card-border);
+  min-height: 60px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .location-management-header h2 {
@@ -34,10 +37,12 @@
   -webkit-text-fill-color: transparent;
 }
 
-.header-controls {
+.location-management-header-controls {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 /* Modern Button Styles */
@@ -216,11 +221,11 @@ input:checked + .slider:before {
 }
 
 /* Modern Search Bar */
-.search-bar {
+.location-mgmt-search-bar {
   margin-bottom: 24px;
 }
 
-.search-container {
+.location-mgmt-search-container {
   position: relative;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -231,7 +236,7 @@ input:checked + .slider:before {
   z-index: 1;
 }
 
-.search-input {
+.location-mgmt-search-input {
   width: 100%;
   padding: 16px 20px 16px 56px;
   border: 2px solid transparent;
@@ -247,18 +252,18 @@ input:checked + .slider:before {
   pointer-events: auto;
 }
 
-.search-input:focus {
+.location-mgmt-search-input:focus {
   outline: none;
   border-color: #5865f2;
   box-shadow: 0 0 0 4px rgba(88, 101, 242, 0.2);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.search-input::placeholder {
+.location-mgmt-search-input::placeholder {
   color: var(--text-muted);
 }
 
-.search-icon {
+.location-mgmt-search-icon {
   position: absolute;
   left: 20px;
   top: 50%;
@@ -269,8 +274,199 @@ input:checked + .slider:before {
   pointer-events: none;
 }
 
+/* Fresh Table Design */
+.main-locations-table-container {
+  background: var(--card-bg, rgba(30, 30, 46, 0.95));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.main-locations-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.main-locations-table thead {
+  background: rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.main-locations-table th {
+  padding: 16px 20px;
+  color: var(--text-secondary, #a0a0b2);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.main-locations-table th:hover {
+  color: var(--text-primary, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.main-locations-table th:nth-child(1) { width: 30%; }
+.main-locations-table th:nth-child(2) { width: 16%; text-align: center; }
+.main-locations-table th:nth-child(3) { width: 12%; text-align: center; }
+.main-locations-table th:nth-child(4) { width: 12%; text-align: center; }
+.main-locations-table th:nth-child(5) { width: 12%; text-align: center; }
+.main-locations-table th:nth-child(6) { width: 18%; text-align: center; }
+
+.main-locations-table tbody tr {
+  border-bottom: 1px solid var(--card-border, rgba(255, 255, 255, 0.05));
+  transition: all 0.2s ease;
+}
+
+.main-locations-table tbody tr:hover {
+  background: rgba(88, 101, 242, 0.08);
+}
+
+.main-locations-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.main-locations-table tbody tr.archived {
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.main-locations-table tbody tr.archived:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.main-locations-table td {
+  padding: 18px 20px;
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  vertical-align: middle;
+  border: none;
+}
+
+.main-locations-table td:nth-child(1) {
+  font-weight: 600;
+}
+
+.main-locations-table td:nth-child(2) {
+  color: var(--text-secondary, #a0a0b2);
+  font-size: 13px;
+  text-align: center;
+}
+
+.main-locations-table td:nth-child(3),
+.main-locations-table td:nth-child(4),
+.main-locations-table td:nth-child(5) {
+  text-align: center;
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+}
+
+.location-mgmt-name {
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Table Actions */
+.main-table-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.main-table-actions .btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 80px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.main-table-actions .btn-secondary {
+  background: var(--input-bg, #2f3136);
+  border-color: var(--input-border, #40444b);
+  color: var(--text-primary, #ffffff);
+}
+
+.main-table-actions .btn-secondary:hover {
+  background: var(--input-hover-bg, #36393f);
+  border-color: var(--input-focus-border, #5865f2);
+  transform: translateY(-1px);
+}
+
+.main-table-actions .btn-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.main-table-actions .btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.main-table-actions .btn-success {
+  background: rgba(40, 167, 69, 0.1);
+  border-color: rgba(40, 167, 69, 0.3);
+  color: #4ade80;
+}
+
+.main-table-actions .btn-success:hover {
+  background: rgba(40, 167, 69, 0.2);
+  border-color: rgba(40, 167, 69, 0.5);
+  color: #86efac;
+  transform: translateY(-1px);
+}
+
+/* Loading and Empty States */
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 16px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--card-border);
+}
+
+.no-locations {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 16px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--card-border);
+}
+
 /* Modern Modal */
-.location-form-modal {
+.location-mgmt-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -353,7 +549,7 @@ input:checked + .slider:before {
 }
 
 /* Modern Form */
-.location-form {
+.location-mgmt-form {
   padding: 32px;
 }
 
@@ -416,6 +612,7 @@ input:checked + .slider:before {
 }
 
 /* Responsive Design */
+/* Responsive Design - Clean and Simple */
 @media (max-width: 1024px) {
   .location-management {
     padding: 20px;
@@ -424,8 +621,37 @@ input:checked + .slider:before {
   .form-row {
     grid-template-columns: 1fr 1fr;
   }
+  
+  .main-locations-table th,
+  .main-locations-table td {
+    padding: 16px 16px;
+  }
 }
 
+/* Stack action buttons at 899px and below */
+@media (max-width: 899px) {
+  .main-table-actions {
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    min-width: 100px;
+  }
+  
+  .main-table-actions .btn {
+    width: 100%;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .main-locations-table th:nth-child(6),
+  .main-locations-table td:nth-child(6) {
+    width: 22%;
+    min-width: 100px;
+  }
+}
+
+/* Tablet layout */
 @media (max-width: 768px) {
   .location-management {
     padding: 16px;
@@ -433,101 +659,86 @@ input:checked + .slider:before {
   
   .location-management-header {
     flex-direction: column;
-    gap: 20px;
-    align-items: stretch;
-    padding: 20px;
+    gap: 16px;
+    text-align: center;
   }
   
-  .header-controls {
-    justify-content: space-between;
+  .location-management-header-controls {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .location-management-header-controls .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .main-locations-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+  }
+  
+  .main-locations-table {
+    min-width: 700px;
+  }
+  
+  .main-locations-table th,
+  .main-locations-table td {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
+  
+  .location-mgmt-modal .modal-content {
+    width: 95%;
+    margin: 10px auto;
+    padding: 20px;
   }
   
   .form-row {
     grid-template-columns: 1fr;
-  }
-  
-  .modal-content {
-    width: 95%;
-    margin: 10px;
-  }
-  
-  .locations-table-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .locations-table {
-    min-width: 800px; /* Increased minimum width to accommodate buttons */
-  }
-  
-  .locations-table th,
-  .locations-table td {
-    padding: 10px 8px; /* Reduced horizontal padding */
-    font-size: 14px;
-  }
-  
-  /* Ensure actions column has enough space */
-  .locations-table th:last-child,
-  .locations-table td:last-child {
-    min-width: 120px; /* Fixed minimum width for actions column */
-    padding-right: 16px; /* Extra padding on the right */
-  }
-  
-  .actions {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: 100%;
-    min-width: 100px;
-  }
-  
-  .btn-small {
-    padding: 6px 10px;
-    font-size: 11px;
-    white-space: nowrap;
-    width: 100%; /* Full width buttons */
-    justify-content: center;
+    gap: 16px;
   }
 }
 
+/* Mobile layout */
 @media (max-width: 480px) {
-  .form-actions {
-    flex-direction: column;
+  .location-management {
+    padding: 12px;
   }
   
-  .btn {
-    justify-content: center;
+  .main-locations-table {
+    min-width: 600px;
   }
   
-  .locations-table {
-    min-width: 650px; /* Reduced but still accommodates buttons */
+  .main-locations-table th,
+  .main-locations-table td {
+    padding: 10px 8px;
+    font-size: 12px;
   }
   
-  /* Even more constrained actions on very small screens */
-  .locations-table th:last-child,
-  .locations-table td:last-child {
-    min-width: 100px;
-    padding-right: 12px;
+  .main-table-actions {
+    gap: 4px;
+    min-width: 80px;
   }
   
-  .actions {
-    min-width: 90px;
-    gap: 3px;
+  .main-table-actions .btn {
+    padding: 6px 8px;
+    font-size: 11px;
   }
   
-  .btn-small {
-    padding: 5px 8px;
-    font-size: 10px;
-    width: 100%;
-  }
-  
-  .search-input {
-    padding: 14px 16px 14px 48px;
+  .location-mgmt-search-input {
+    padding: 12px 14px 12px 40px;
     font-size: 14px;
   }
   
-  .search-icon {
-    left: 16px;
+  .location-mgmt-search-icon {
+    left: 14px;
     font-size: 16px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
   }
 }

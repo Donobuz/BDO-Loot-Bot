@@ -1,0 +1,83 @@
+{
+    "name": "Hystria Ruins",
+    "textFilters": {
+        "minConfidence": 0.4,
+        "allowedCharacters": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -'()[]",
+        "minLength": 3
+    },
+    "items": [
+        {
+            "name": "Tungrad Earring",
+            "variations": ["tungrad earring", "Tungrad earring"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "tungrad.{0,2}earring",
+            "minSimilarity": 0.85,
+            "value": 95000000
+        },
+        {
+            "name": "Hystria Energy",
+            "variations": ["hystria energy", "Hystria energy"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "hystria.{0,2}energy",
+            "minSimilarity": 0.8,
+            "value": 450000
+        },
+        {
+            "name": "Black Stone (Weapon)",
+            "variations": ["Black Stone Weapon", "Blackstone Weapon", "Black Stone(Weapon)"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "black.{0,3}stone.{0,3}weapon",
+            "minSimilarity": 0.8,
+            "value": 195000
+        },
+        {
+            "name": "Black Stone (Armor)",
+            "variations": ["Black Stone Armor", "Blackstone Armor", "Black Stone(Armor)"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "black.{0,3}stone.{0,3}armor",
+            "minSimilarity": 0.8,
+            "value": 285000
+        },
+        {
+            "name": "Memory Fragment",
+            "variations": ["memory fragment", "Memory fragment"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "memory.{0,2}fragment",
+            "minSimilarity": 0.8,
+            "value": 1750000
+        },
+        {
+            "name": "Caphras Stone",
+            "variations": ["caphras stone", "Caphras stone"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "caphras.{0,2}stone",
+            "minSimilarity": 0.8,
+            "value": 3000000
+        },
+        {
+            "name": "Ancient Spirit Dust",
+            "variations": ["ancient spirit dust", "Ancient Spirit dust"],
+            "fuzzyMatch": true,
+            "fuzzyPattern": "ancient.{0,2}spirit.{0,2}dust",
+            "minSimilarity": 0.75,
+            "value": 1200000
+        }
+    ],
+    "patterns": [
+        {
+            "type": "quantity",
+            "regex": "^(\\d+)x\\s+(.+)$",
+            "groups": ["quantity", "item"]
+        },
+        {
+            "type": "quantity",
+            "regex": "^(.+)\\s+x(\\d+)$",
+            "groups": ["item", "quantity"]
+        },
+        {
+            "type": "silver",
+            "regex": "Silver:\\s+(\\d+)",
+            "groups": ["amount"]
+        }
+    ]
+}

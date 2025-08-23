@@ -1,14 +1,64 @@
 // Global type definitions for Electron API
+
+// Update interfaces - explicit types instead of Partial<Omit<T, 'fields'>>
+export interface LocationUpdate {
+  name?: string;
+  ap?: number;
+  total_ap?: number;
+  dp?: number;
+  monster_type?: string;
+  archived?: string;
+}
+
+export interface ItemUpdate {
+  name?: string;
+  bdo_item_id?: number;
+  base_price?: number;
+  last_sold_price?: number;
+  loot_table_ids?: number[];
+  region?: string | null;
+  image_url?: string | null;
+  archived?: string | null;
+  type?: ItemType;
+  convertible_to_bdo_item_id?: number | null;
+  conversion_ratio?: number;
+}
+
+export interface LootTableUpdate {
+  location_id?: number;
+  item_ids?: number[];
+  archived?: string | null;
+}
+
+export interface UserUpdate {
+  username?: string;
+  avatar?: string;
+  permissions?: string[];
+}
+
+export interface UserPreferencesUpdate {
+  preferred_region?: string;
+  display_regions?: string[];
+  designated_ocr_region?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    display?: string;
+  } | null;
+  tax_calculations?: TaxCalculations | null;
+}
+
 declare global {
   interface Window {
     electronAPI: {
       startDiscordAuth: () => Promise<{
         success: boolean;
-        user?: any;
+        user?: User;
         error?: string;
       }>;
       cancelDiscordAuth: () => Promise<{ success: boolean; error?: string }>;
-      checkAuthStatus: () => Promise<{ isLoggedIn: boolean; user?: any }>;
+      checkAuthStatus: () => Promise<{ isLoggedIn: boolean; user?: User }>;
       logout: () => Promise<void>;
       getCurrentUser: () => Promise<User | null>;
       locations: {
@@ -42,7 +92,7 @@ declare global {
         }>;
         update: (
           id: number,
-          updates: Partial<Omit<Location, "id" | "created" | "updated">>
+          updates: LocationUpdate
         ) => Promise<{ success: boolean; data?: Location; error?: string }>;
         archive: (
           id: number
@@ -111,7 +161,7 @@ declare global {
         }>;
         update: (
           id: number,
-          updates: Partial<Omit<Item, "id" | "created" | "updated">>
+          updates: ItemUpdate
         ) => Promise<{ success: boolean; data?: Item; error?: string }>;
         archive: (
           id: number
@@ -165,7 +215,7 @@ declare global {
         ) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         update: (
           id: number,
-          updates: Partial<Omit<LootTable, "id" | "created" | "updated">>
+          updates: LootTableUpdate
         ) => Promise<{ success: boolean; data?: LootTable; error?: string }>;
         addItem: (
           lootTableId: number,
@@ -183,7 +233,7 @@ declare global {
         ) => Promise<{ success: boolean; data?: User; error?: string }>;
         update: (
           id: number,
-          updates: any
+          updates: UserUpdate
         ) => Promise<{ success: boolean; data?: User; error?: string }>;
       };
       userPreferences: {
@@ -194,7 +244,7 @@ declare global {
         }>;
         update: (
           userId: string,
-          preferences: Partial<UserPreferences>
+          preferences: UserPreferencesUpdate
         ) => Promise<{
           success: boolean;
           data?: UserPreferences;
@@ -202,7 +252,7 @@ declare global {
         }>;
         create: (
           userId: string,
-          preferences: Partial<UserPreferences>
+          preferences: UserPreferencesUpdate
         ) => Promise<{
           success: boolean;
           data?: UserPreferences;
@@ -210,7 +260,7 @@ declare global {
         }>;
         getOrCreate: (
           userId: string,
-          defaultPreferences?: Partial<UserPreferences>
+          defaultPreferences?: UserPreferencesUpdate
         ) => Promise<{
           success: boolean;
           data?: UserPreferences;
@@ -228,36 +278,110 @@ declare global {
         };
         error?: string;
       }>;
+      session: {
+        start: (config: { location: string; locationId: number; captureInterval?: number }) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+        stop: () => Promise<{
+          success: boolean;
+          sessionSummary?: any;
+          error?: string;
+        }>;
+        status: () => Promise<{
+          success: boolean;
+          status?: any;
+          error?: string;
+        }>;
+        stats: () => Promise<{
+          success: boolean;
+          stats?: any;
+          error?: string;
+        }>;
+        summary: () => Promise<{
+          success: boolean;
+          summary?: any;
+          error?: string;
+        }>;
+        current: () => Promise<{
+          success: boolean;
+          session?: any;
+          error?: string;
+        }>;
+        updateInterval: (interval: number) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+        testCapture: () => Promise<{
+          success: boolean;
+          stats?: {
+            captureTime: number;
+            regionSize: string;
+            bufferSize: number;
+          };
+          imageData?: string;
+          error?: string;
+        }>;
+        availableLocations: () => Promise<{
+          success: boolean;
+          locations?: string[];
+          error?: string;
+        }>;
+        isActive: () => Promise<{
+          success: boolean;
+          isActive?: boolean;
+          error?: string;
+        }>;
+        toggleScreenshots: (config: { enabled: boolean }) => Promise<{
+          success: boolean;
+          error?: string;
+        }>;
+      };
       openStreamingOverlay: (data: {
         location?: Location;
-        items: any[];
+        items: Item[];
         itemCounts: Record<number, number>;
         sessionStartTime: string;
       }) => Promise<{ success: boolean; error?: string }>;
       updateStreamingOverlay: (data: {
         location?: Location;
-        items: any[];
+        items: Item[];
         itemCounts: Record<number, number>;
         sessionStartTime?: string;
       }) => Promise<{ success: boolean; error?: string }>;
       closeStreamingOverlay: () => Promise<{ success: boolean; error?: string }>;
       isStreamingOverlayOpen: () => Promise<{ success: boolean; isOpen: boolean; error?: string }>;
-      onOverlayData: (callback: (data: any) => void) => void;
+      onOverlayData: (callback: (data: StreamingOverlayData) => void) => void;
       onStreamingOverlayOpened: (callback: () => void) => void;
       onStreamingOverlayClosed: (callback: () => void) => void;
       onStreamingOverlayFocused: (callback: () => void) => void;
       onStreamingOverlayBlurred: (callback: () => void) => void;
-      onSessionCleanup: (callback: (data: {
-        reason: string;
-        timestamp: string;
-      }) => void) => void;
+      onSessionLootDetected: (callback: (event: any, data: { items: any[]; timestamp: number }) => void) => void;
+      onSessionStatsUpdate: (callback: (event: any, data: any) => void) => void;
+      onSessionSummaryUpdate: (callback: (event: any, data: { summary: any; timestamp: number }) => void) => void;
     };
   }
 }
 
+// OCR Region type for region selection
+export interface OCRRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  display?: string;
+}
+
 // Database types
+export interface StreamingOverlayData {
+  location?: Location;
+  items: Item[];
+  itemCounts: Record<number, number>;
+  sessionStartTime?: string;
+}
+
 export interface User {
-  permissions: any;
+  permissions: string[];
   id: string; // Changed to string to match UUID
   discord_id: string;
   username: string;
@@ -356,4 +480,4 @@ export interface SessionLoot {
   timestamp: string;
 }
 
-export {}; // This makes the file a module
+export { }; // This makes the file a module

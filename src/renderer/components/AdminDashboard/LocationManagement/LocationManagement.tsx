@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import './LocationManagementTable.css';
+import './LocationManagement.css';
 import { Location } from '../../../types';
 import { useModal } from '../../../contexts/ModalContext';
 
@@ -234,7 +234,7 @@ const LocationManagement: React.FC = () => {
       {/* Header */}
       <div className="location-management-header">
         <h2>Locations</h2>
-        <div className="header-controls">
+        <div className="location-management-header-controls">
           <button
             className={`btn ${showArchived ? 'btn-warning' : 'btn-secondary'}`}
             onClick={() => setShowArchived(!showArchived)}
@@ -248,12 +248,12 @@ const LocationManagement: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="search-bar">
-        <div className="search-container">
-          <span className="search-icon">🔍</span>
+      <div className="location-mgmt-search-bar">
+        <div className="location-mgmt-search-container">
+          <span className="location-mgmt-search-icon">🔍</span>
           <input
             type="text"
-            className="search-input"
+            className="location-mgmt-search-input"
             placeholder="Search locations by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -294,7 +294,7 @@ const LocationManagement: React.FC = () => {
             <tbody>
               {filteredLocations.map((location) => (
                 <tr key={location.id} className={location.archived ? 'archived' : ''}>
-                  <td className="location-name">{location.name}</td>
+                  <td className="location-mgmt-name">{location.name}</td>
                   <td>{location.monster_type}</td>
                   <td>{location.ap}</td>
                   <td>{location.total_ap}</td>
@@ -335,7 +335,7 @@ const LocationManagement: React.FC = () => {
 
       {/* Modal */}
       {showLocationModal && (
-        <div className="location-form-modal" onClick={handleCloseModal}>
+        <div className="location-mgmt-modal" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingLocation ? 'Edit Location' : 'Add New Location'}</h3>
@@ -344,7 +344,7 @@ const LocationManagement: React.FC = () => {
               </button>
             </div>
 
-            <form className="location-form" onSubmit={handleSubmit}>
+            <form className="location-mgmt-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label htmlFor="name">Location Name:</label>
                 <input

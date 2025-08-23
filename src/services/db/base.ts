@@ -12,7 +12,7 @@ export class BaseDatabase {
   async testConnection(): Promise<void> {
     try {
       // Test basic connection with a simple health check
-      const { count, error } = await this.supabase
+      const { count: _count, error } = await this.supabase
         .from('users')
         .select('*', { count: 'exact', head: true });
 

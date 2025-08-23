@@ -1,5 +1,5 @@
 import { BaseDatabase } from './base';
-import { Location } from './types';
+import { Location, LocationUpdate } from './types/location';
 import { lootTableService } from './lootTables';
 
 export class LocationService extends BaseDatabase {
@@ -49,7 +49,11 @@ export class LocationService extends BaseDatabase {
   async createLocation(location: Omit<Location, 'id' | 'created' | 'updated'>): Promise<Location> {
     const { data, error } = await this.supabase
       .from('locations')
-      .insert([location])
+      .insert([{
+        ...location,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString()
+      }])
       .select()
       .single();
     
@@ -74,7 +78,7 @@ export class LocationService extends BaseDatabase {
     return data;
   }
 
-  async updateLocation(id: number, updates: Partial<Omit<Location, 'id' | 'created'>>): Promise<Location> {
+  async updateLocation(id: number, updates: LocationUpdate): Promise<Location> {
     const { data, error } = await this.supabase
       .from('locations')
       .update({ ...updates, updated: new Date().toISOString() })

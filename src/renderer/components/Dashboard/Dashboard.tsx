@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { UserWithPreferences, UserPreferences } from "../../types";
+import { useEffect, useState, useCallback } from "react";
+import { UserWithPreferences, UserPreferencesUpdate } from "../../types";
 import {
   getDiscordAvatarUrl,
   getDefaultAvatarSvg,
@@ -74,7 +74,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
-  const handleSaveSettings = async (preferences: Partial<UserPreferences>) => {
+  const handleSaveSettings = async (preferences: UserPreferencesUpdate) => {
     if (!user || updatingPreferences) return;
     try {
       setUpdatingPreferences(true);
@@ -215,8 +215,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       <main className='dashboard-content'>
         <div className='welcome-section'>
-          <h1>BDO Loot Detection</h1>
-          <p>Automatically track your loot drops during grinding sessions</p>
+          <h1>BDO Loot Ledger</h1>
+          <p>Automatically track your drops during a grind session</p>
         </div>
 
         <div className='main-session-area'>

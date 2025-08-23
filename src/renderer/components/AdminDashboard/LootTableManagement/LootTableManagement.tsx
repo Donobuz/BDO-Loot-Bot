@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LootTable, Location, Item } from '../../../types';
 import { SearchableSelect } from '../../SearchableSelect';
 import Modal from '../../Modal/Modal';
@@ -17,7 +17,7 @@ export default function LootTableManagement({}: LootTableManagementProps) {
   const [selectedLootTable, setSelectedLootTable] = useState<LootTable | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [_, setSelectedItemId] = useState<number | null>(null);
   const [stagedItems, setStagedItems] = useState<Item[]>([]);
 
   const loadData = async () => {
